@@ -8,7 +8,7 @@
      sequence number for same-day updates) every time a new version is pushed to
      GitHub that the app should pick up. The native shell fetches this file's raw
      text and reads this tag directly — no JS execution needed for the check itself. -->
-<meta name="app-version" content="2026-10-02-1">
+<meta name="app-version" content="2026-10-09-10">
 
 <!-- iOS PWA / Add to Home Screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -155,6 +155,7 @@
     flex: 0 0 auto;
   }
   .header-variant-row {
+    position: relative;   /* anchors the Info icon at its right end */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -280,6 +281,19 @@
     color: var(--accent); text-transform: uppercase;
   }
   .panel-body { padding: 8px; overflow: visible; box-sizing: border-box; }
+  /* Info & Defaults panel (Oct 2026) — opened from the INFO button in the header */
+  .info-row { display:flex; justify-content:space-between; align-items:center; gap:8px;
+    font-size:13px; color:var(--text-dim); font-family:var(--cond); letter-spacing:1px; text-transform:uppercase; }
+  .info-row .info-val { color:var(--text); font-family:var(--mono); font-weight:600; letter-spacing:0.5px; text-transform:none; text-align:right; }
+  .info-sub { font-size:12px; letter-spacing:2px; text-transform:uppercase; color:var(--accent); font-family:var(--cond);
+    border-top:1px solid var(--border); padding-top:8px; margin-top:2px; }
+  .info-note { font-size:11px; color:var(--text-dim); line-height:1.4; }
+  .info-row input { width:80px; text-align:right; box-sizing:border-box; background:#0a0a0a; border:1px solid #2c2c2c;
+    color:#f0f0f0; font-family:'Futura',sans-serif; font-weight:600; letter-spacing:0.5px; font-size:13px; padding:4px 6px; border-radius:3px; }
+  .info-row .variant-btn { margin-left:4px; }
+  #info-btn { position:absolute; right:0; top:50%; transform:translateY(-50%); background:none; border:none;
+    padding:2px; cursor:pointer; color:var(--text-dim); line-height:0; }
+  #info-btn:hover, #info-btn.active { color:var(--accent); }
 
   /* ── INPUTS ── */
   .field {
@@ -688,12 +702,18 @@
     font-size:14px; letter-spacing:1px; margin-bottom:16px; font-family:Arial,sans-serif; }
   .ls-status.ok   { background:#e6f9ee; color:#1a7a3c; border:1px solid #a3d9b5; }
   .ls-status.warn { background:#fff4e0; color:#a06000; border:1px solid #ffc96b; }
-  .ls-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
-  .ls-box { border:1px solid #c8d4e0; border-radius:4px; padding:10px 12px; background:#f7fafd; }
-  .ls-box .lb { font-size:14px; text-transform:uppercase; letter-spacing:1px; color:#667;
-    margin-bottom:3px; font-family:Arial,sans-serif; }
-  .ls-box .lv { font-size:18px; font-weight:700; color:#0066aa; font-family:Arial,sans-serif; }
-  .ls-box .lu { font-size:14px; color:#889; font-family:Arial,sans-serif; }
+  /* Weight boxes made slightly more compact (Oct 2026) to give the CG envelope more room. */
+  .ls-summary { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:12px; }
+  .ls-box { border:1px solid #c8d4e0; border-radius:4px; padding:6px 10px; background:#f7fafd; }
+  .ls-box .lb { font-size:12px; text-transform:uppercase; letter-spacing:1px; color:#667;
+    margin-bottom:1px; font-family:Arial,sans-serif; }
+  .ls-box .lv { font-size:16px; font-weight:700; color:#0066aa; font-family:Arial,sans-serif; }
+  .ls-box .lu { font-size:12px; color:#889; font-family:Arial,sans-serif; }
+  /* CG envelope with the status badge in the space to its right */
+  .ls-chart-row { display:flex; gap:16px; align-items:flex-start; margin-bottom:16px; }
+  .ls-chart-row .ls-chart { flex:0 0 auto; width:440px; max-width:100%; }
+  .ls-chart-row .ls-side { flex:1; min-width:0; display:flex; flex-direction:column; gap:8px; align-items:flex-start; }
+  .ls-chart-row .ls-status { margin-bottom:0; }
   .ls-h2 { font-size:13px; text-transform:uppercase; letter-spacing:2px; color:#445;
     margin:16px 0 6px; border-bottom:1px solid #dde3ea; padding-bottom:4px;
     font-family:Arial,sans-serif; }
@@ -729,6 +749,9 @@
     content: ''; display: inline-block; width: 60px; height: 1px;
     background: #dde3ea; vertical-align: middle; margin: 0 10px;
   }
+  /* Small-print note at the very bottom of the text loadsheet (page 2) — Oct 2026, user request */
+  .ls-footnote { white-space: normal; font-family: Arial, sans-serif; font-size: 8px; color: #888;
+    letter-spacing: 0.3px; line-height: 1.2; margin-top: 14px; }
   .ls-text-sheet {
     background: #ffffff;
     color: #000000;
@@ -1244,6 +1267,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
        regardless of which family (A320/A330) is active, so the header height
        never jumps when switching families. -->
   <div class="header-variant-row">
+    <!-- Info & Defaults icon: right end of this row, under LOADSHEET / RESET. Drawn as an
+         inline SVG so it looks the same everywhere (the Unicode ⓘ glyph is missing from
+         some fonts). -->
+    <button id="info-btn" onclick="toggleInfoPanel()" title="Info &amp; defaults" aria-label="Info &amp; defaults">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="7.6" r="1.25" fill="currentColor"/><path d="M12 10.8v6.4" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>
+    </button>
     <div class="variant-selector" id="variant-selector-a330" style="display:none;">
       <button class="variant-btn" onclick="setVariant('A330-200')">-200</button>
       <button class="variant-btn active" onclick="setVariant('A330-300')">-300</button>
@@ -1263,6 +1292,32 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     </div>
   </div>
 </header>
+
+<!-- Info & Defaults screen (Oct 2026): its own screen, opened by the ⓘ icon in the header.
+     Swaps places with the calculator (no pop-up overlay — overlays break under some browser
+     isolation layers, same reason as the A321F cargo zones). -->
+<div id="info-screen" style="display:none;max-width:520px;margin:24px auto;padding:0 16px;">
+<div class="panel" id="info-panel">
+  <div class="panel-header" style="justify-content:space-between;"><span class="panel-title">Info &amp; Defaults</span><button class="btn" onclick="toggleInfoPanel()">DONE</button></div>
+  <div class="panel-body" style="display:flex;flex-direction:column;gap:9px;padding:10px;">
+    <div class="info-row"><span>Version</span><span class="info-val" id="info-version">&mdash;</span></div>
+    <div class="info-row app-only" style="display:none;"><span>App build</span><span class="info-val" id="info-build">&mdash;</span></div>
+    <div class="info-row app-only" style="display:none;"><span>Running</span><span class="info-val" id="info-source">&mdash;</span></div>
+    <div class="app-only" style="display:none;align-items:center;gap:8px;">
+      <button class="btn" onclick="checkForUpdatesNow()" style="flex:none;">Check for updates</button>
+      <span class="info-note" id="info-update-status"></span>
+    </div>
+    <div class="info-sub">Defaults</div>
+    <div class="info-row"><span>Open with</span><span>
+      <button class="variant-btn" id="def-fam-A320" onclick="setDefaultFamily('A320')">A320</button><button class="variant-btn" id="def-fam-A330" onclick="setDefaultFamily('A330')">A330</button>
+    </span></div>
+    <div class="info-row"><span>Taxi fuel A320</span><span><input type="number" id="def-taxi-a320" min="0" step="10" oninput="setDefaultTaxi('taxiA320', this)"> <span style="text-transform:none;">kg</span></span></div>
+    <div class="info-row"><span>Taxi fuel A330</span><span><input type="number" id="def-taxi-a330" min="0" step="10" oninput="setDefaultTaxi('taxiA330', this)"> <span style="text-transform:none;">kg</span></span></div>
+    <div class="info-note">Defaults apply when the tool opens and on RESET. KG/LB is remembered automatically.</div>
+    <div class="info-note">Validation pending &ndash; not for operational use.</div>
+  </div>
+</div>
+</div>
 
 <div class="main">
 
@@ -4256,7 +4311,8 @@ function resetAll() {
   });
   ['cockpit','fwd','mid','aft'].forEach(k => { const e = document.getElementById('pax-loc-' + k); if (e) e.value = ''; });
   syncPaxFromLocations(false);
-  writeMassInput('fuel-taxi', 500);
+  writeMassInput('fuel-taxi', wbPrefs.taxiA330);
+  writeMassInput('a320-fuel-taxi', wbPrefs.taxiA320);
   ['fuel-sg-std','fuel-sg-ns'].forEach(id => { const e = document.getElementById(id); if (e) { e.value = ''; e.style.borderColor = '#2c2c2c'; } });
   fuelSG300 = 0.785; applyFuelSG300();
   setDefaultDate();
@@ -4671,6 +4727,9 @@ function calculateA320() {
 
 function switchTab(tab) {
   const isCalc = tab === 'calc';
+  // Leaving the Info & Defaults screen whenever another screen is chosen.
+  const info = document.getElementById('info-screen');
+  if (info && info.style.display !== 'none' && !isCalc) closeInfoScreen();
   document.querySelector('.main').style.display      = isCalc ? '' : 'none';
   document.getElementById('tab-sheet').style.display = isCalc ? 'none' : 'block';
   if (isCalc) {
@@ -4789,10 +4848,6 @@ function renderLoadsheet() {
       </div>
     </div>
 
-    <div class="ls-status ${statusOk ? 'ok' : 'warn'}">${statusOk ? '✓ WITHIN LIMITS' : '⚠ ' + status}</div>
-
-    ${ballastCapNote ? `<div style="background:#fff4e0;color:#a06000;border:1px solid #ffc96b;border-radius:3px;padding:6px 12px;font-size:12px;margin-top:8px;">⛽ ${ballastCapNote}</div>` : ''}
-
     <div class="ls-summary">
       <div class="ls-box">
         <div class="lb">Zero Fuel Weight</div>
@@ -4812,7 +4867,13 @@ function renderLoadsheet() {
     </div>
 
     <div class="ls-h2">CG Envelope</div>
-    <div style="margin-bottom:16px;">${svgChart}</div>
+    <div class="ls-chart-row">
+      <div class="ls-chart">${svgChart}</div>
+      <div class="ls-side">
+        <div class="ls-status ${statusOk ? 'ok' : 'warn'}">${statusOk ? '✓ WITHIN LIMITS' : '⚠ ' + status}</div>
+        ${ballastCapNote ? `<div style="background:#fff4e0;color:#a06000;border:1px solid #ffc96b;border-radius:3px;padding:6px 12px;font-size:12px;">⛽ ${ballastCapNote}</div>` : ''}
+      </div>
+    </div>
 
     <div class="ls-h2">Mass &amp; Balance Manifest</div>
     <table class="ls-table">
@@ -4828,7 +4889,7 @@ function renderLoadsheet() {
     ${a321fCargoZonesPageHTML()}
 
     <div class="ls-page2-divider">${a321fHasCargoZonesPage() ? 'Page 3' : 'Page 2'} — Text Loadsheet</div>
-    <div id="ls-page2" class="ls-text-sheet">${buildTextLoadsheet(v, lim, reg, fltNum, dateDisp)}</div>
+    <div id="ls-page2" class="ls-text-sheet">${buildTextLoadsheet(v, lim, reg, fltNum, dateDisp)}<div class="ls-footnote">Validation pending &ndash; not for operational use.</div></div>
 
     `;
 
@@ -5079,10 +5140,33 @@ function savePDF() {
       if (cargoPage) await addElementAsPage(cargoPage, false);
       await addElementAsPage(page2, false);
 
-      const reg = (document.getElementById('acft-reg')?.value || 'loadsheet').toUpperCase().replace(/[^A-Z0-9]/g, '') || 'loadsheet';
-      const fname = `WB_${reg}_${currentVariant}_${Date.now()}.pdf`;
+      // Short file name: registration (or the variant if no registration is entered) plus the
+      // flight date as DDMMM, e.g. "B-LAA_09OCT.pdf" or "A330-300_09OCT.pdf".
+      const reg = (document.getElementById('acft-reg')?.value || '').toUpperCase().replace(/[^A-Z0-9-]/g, '') || currentVariant;
+      const MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+      const dm = (document.getElementById('flt-date')?.value || '').match(/^(\d{1,2})\/(\d{1,2})/);
+      const now = new Date();
+      const day = dm ? +dm[1] : now.getDate();
+      const mon = dm ? +dm[2] - 1 : now.getMonth();
+      const fname = `${reg}_${String(day).padStart(2, '0')}${MON[mon] || MON[now.getMonth()]}.pdf`;
 
       const blob = pdf.output('blob');
+
+      // Native iPad/Mac app: hand the PDF to the app, which shows the system Share sheet
+      // (iPad) or a Save dialog (Mac). This handler only exists inside the app, so normal
+      // browsers skip straight past this to the download/share logic below.
+      const nativeSave = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.savePDF;
+      if (nativeSave) {
+        const b64 = await new Promise((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result).split(',')[1]);
+          r.onerror = reject;
+          r.readAsDataURL(blob);
+        });
+        nativeSave.postMessage({ name: fname, data: b64 });
+        return;   // the finally{} below still restores the button
+      }
+
       const status = document.getElementById('pdf-modal-status');
       const modal = document.getElementById('pdf-result-modal');
       const shareBtn = document.getElementById('pdf-modal-share');
@@ -5185,7 +5269,9 @@ function buildLoadsheetSVG() {
   const tow=displayToKg(parseNum('r-tow')), towCG=parseNum('r-tow-cg');
   const lw =displayToKg(parseNum('r-lw')),  lwCG =parseNum('r-lw-cg');
 
-  const SW=480, SH=280, ml=56, mr=16, mt=22, mb=38;
+  // 440 x 308 (Oct 2026): squarer than the original 480 x 280 and ~10% larger, with the
+  // status badge moved beside it. The legend below was tightened to fit.
+  const SW=440, SH=308, ml=56, mr=16, mt=22, mb=38;
   const pw=SW-ml-mr, ph=SH-mt-mb;
 
   const allPts=[...v.zfwEnv,...v.towEnv,...(v.lwEnv||[])];
@@ -5272,23 +5358,23 @@ function buildLoadsheetSVG() {
   });
 
   // Legend
-  const lx=ml, ly=6;
+  const lx=ml-20, ly=6;
   g+=`<rect x="${lx}" y="${ly}" width="10" height="7" fill="rgba(26,122,60,0.15)" stroke="#1a7a3c" stroke-width="1"/>
       <text x="${lx+14}" y="${ly+7}" font-size="8" fill="#445" font-family="Arial">TOW Envelope</text>
-      <rect x="${lx+92}" y="${ly}" width="10" height="7" fill="rgba(180,130,0,0.1)" stroke="#b08000" stroke-width="1" stroke-dasharray="3,1"/>
-      <text x="${lx+106}" y="${ly+7}" font-size="8" fill="#445" font-family="Arial">ZFW Envelope</text>`;
-  let lgShift = 92;
+      <rect x="${lx+80}" y="${ly}" width="10" height="7" fill="rgba(180,130,0,0.1)" stroke="#b08000" stroke-width="1" stroke-dasharray="3,1"/>
+      <text x="${lx+94}" y="${ly+7}" font-size="8" fill="#445" font-family="Arial">ZFW Envelope</text>`;
+  let lgShift = 80;
   if (v.lwEnv) {
-    g+=`<rect x="${lx+184}" y="${ly}" width="10" height="7" fill="rgba(0,102,170,0.1)" stroke="#0066aa" stroke-width="1"/>
-        <text x="${lx+198}" y="${ly+7}" font-size="8" fill="#445" font-family="Arial">LW Envelope</text>`;
-    lgShift = 184;
+    g+=`<rect x="${lx+160}" y="${ly}" width="10" height="7" fill="rgba(0,102,170,0.1)" stroke="#0066aa" stroke-width="1"/>
+        <text x="${lx+174}" y="${ly+7}" font-size="8" fill="#445" font-family="Arial">LW Envelope</text>`;
+    lgShift = 160;
   }
-  g+=`<circle cx="${lx+100+lgShift}" cy="${ly+4}" r="4" fill="#1a7a3c"/>
-      <text x="${lx+108+lgShift}" y="${ly+7}" font-size="8" fill="#445" font-family="Arial">TOW</text>
-      <circle cx="${lx+136+lgShift}" cy="${ly+4}" r="4" fill="#0066aa"/>
-      <text x="${lx+144+lgShift}" y="${ly+7}" font-size="8" fill="#445" font-family="Arial">LDG</text>
-      <circle cx="${lx+171+lgShift}" cy="${ly+4}" r="4" fill="#b08000"/>
-      <text x="${lx+179+lgShift}" y="${ly+7}" font-size="8" fill="#445" font-family="Arial">ZFW</text>`;
+  g+=`<circle cx="${lx+86+lgShift}" cy="${ly+4}" r="4" fill="#1a7a3c"/>
+      <text x="${lx+94+lgShift}" y="${ly+7}" font-size="8" fill="#445" font-family="Arial">TOW</text>
+      <circle cx="${lx+120+lgShift}" cy="${ly+4}" r="4" fill="#0066aa"/>
+      <text x="${lx+128+lgShift}" y="${ly+7}" font-size="8" fill="#445" font-family="Arial">LDG</text>
+      <circle cx="${lx+154+lgShift}" cy="${ly+4}" r="4" fill="#b08000"/>
+      <text x="${lx+162+lgShift}" y="${ly+7}" font-size="8" fill="#445" font-family="Arial">ZFW</text>`;
 
   // Axis labels
   g+=`<text x="${(ml+pw/2).toFixed(1)}" y="${SH-1}" text-anchor="middle" font-size="9" fill="#777" font-family="Arial">CG POSITION (% MAC)</text>`;
@@ -5297,9 +5383,81 @@ function buildLoadsheetSVG() {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SW} ${SH}" style="width:100%;max-width:${SW}px;border:1px solid #dde3ea;border-radius:4px;background:#fafcff;">${g}</svg>`;
 }
 
+// ── Info & Defaults panel (Oct 2026) ─────────────────────────────────────────
+// Defaults are stored per device in localStorage (kg). They are applied at start-up
+// and on RESET. Inside the iPad/Mac app, the panel also shows the app build, whether
+// the built-in copy or a downloaded update is running, and a "Check for updates"
+// button; those rows talk to the app through window.webkit.messageHandlers.app and
+// stay hidden in a normal browser.
+const WB_PREFS_KEY = 'wbPrefs';
+const WB_PREF_DEFAULTS = { family: 'A320', taxiA320: 200, taxiA330: 500 };
+let wbPrefs = (function () {
+  try { return Object.assign({}, WB_PREF_DEFAULTS, JSON.parse(localStorage.getItem(WB_PREFS_KEY) || '{}')); }
+  catch (e) { return Object.assign({}, WB_PREF_DEFAULTS); }
+})();
+function saveWbPrefs() { try { localStorage.setItem(WB_PREFS_KEY, JSON.stringify(wbPrefs)); } catch (e) {} }
+function appBridge() { return window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.app; }
+function infoScreenOpen() { return document.getElementById('info-screen').style.display !== 'none'; }
+function toggleInfoPanel() {
+  const open = !infoScreenOpen();
+  if (open) {
+    switchTab('calc');                                   // leave the loadsheet if it was open
+    document.querySelector('.main').style.display = 'none';
+    document.getElementById('info-screen').style.display = 'block';
+    refreshInfoPanel();
+    window.scrollTo(0, 0);
+  } else {
+    closeInfoScreen();
+  }
+  document.getElementById('info-btn').classList.toggle('active', open);
+}
+function closeInfoScreen() {
+  document.getElementById('info-screen').style.display = 'none';
+  document.getElementById('info-btn').classList.remove('active');
+  document.querySelector('.main').style.display = '';
+  if (typeof calculate === 'function') calculate();
+}
+function refreshInfoPanel() {
+  const meta = document.querySelector('meta[name="app-version"]');
+  document.getElementById('info-version').textContent = meta ? meta.content : '—';
+  ['A320', 'A330'].forEach(f => document.getElementById('def-fam-' + f).classList.toggle('active', wbPrefs.family === f));
+  const t320 = document.getElementById('def-taxi-a320'), t330 = document.getElementById('def-taxi-a330');
+  if (document.activeElement !== t320) t320.value = wbPrefs.taxiA320;
+  if (document.activeElement !== t330) t330.value = wbPrefs.taxiA330;
+  const inApp = !!appBridge();
+  document.querySelectorAll('#info-panel .app-only').forEach(el => el.style.display = inApp ? 'flex' : 'none');
+  if (inApp) { try { appBridge().postMessage({ cmd: 'info' }); } catch (e) {} }
+}
+function setDefaultFamily(f) { wbPrefs.family = f; saveWbPrefs(); refreshInfoPanel(); }
+function setDefaultTaxi(key, el) {
+  const n = Math.round(+el.value);
+  const ok = el.value !== '' && isFinite(n) && n >= 0 && n <= 5000;
+  el.style.borderColor = ok ? '#2c2c2c' : 'var(--danger)';
+  if (!ok) return;
+  wbPrefs[key] = n; saveWbPrefs();
+}
+function checkForUpdatesNow() {
+  const st = document.getElementById('info-update-status');
+  st.textContent = 'Checking…';
+  try { appBridge().postMessage({ cmd: 'checkUpdate' }); } catch (e) { st.textContent = 'Not available here.'; }
+}
+// Called by the app with its answers.
+window.__appReply = function (cmd, data) {
+  data = data || {};
+  if (cmd === 'info') {
+    if (data.build)  document.getElementById('info-build').textContent  = data.build;
+    if (data.source) document.getElementById('info-source').textContent = data.source;
+  } else if (cmd === 'checkUpdate') {
+    document.getElementById('info-update-status').textContent = data.message || '';
+  }
+};
+
 window.addEventListener('load', () => {
   document.getElementById('a320-fuel-panel').style.display = 'none';
-  setFamily('A320');
+  // Default taxi fuel from Info & Defaults (raw kg; the KG/LB conversion below runs after this).
+  document.getElementById('fuel-taxi').value = wbPrefs.taxiA330;
+  document.getElementById('a320-fuel-taxi').value = wbPrefs.taxiA320;
+  setFamily(wbPrefs.family === 'A330' ? 'A330' : 'A320');
   setFuelMode('standard');
   setDefaultDate();
   setDefaultFlightNum();
