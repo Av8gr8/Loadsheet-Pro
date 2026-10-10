@@ -8,7 +8,7 @@
      sequence number for same-day updates) every time a new version is pushed to
      GitHub that the app should pick up. The native shell fetches this file's raw
      text and reads this tag directly — no JS execution needed for the check itself. -->
-<meta name="app-version" content="2026-10-10-1">
+<meta name="app-version" content="2026-10-10-2">
 
 <!-- iOS PWA / Add to Home Screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -4308,10 +4308,16 @@ function syncPaxFromLocations(recalc) {
 function resetAll() {
   ['acft-reg','flt-date','flt-num',
    'dow','dow-cg','pax','pax-cg','cargo-fwd','cargo-k1','cargo-k2','cargo-aft','cargo-h4','cargo-bulk',
-   'fuel-block','fuel-trip','tk-l2','tk-l1','tk-ctr','tk-r1','tk-r2','tk-tail'].forEach(id => {
+   'fuel-block','fuel-trip','tk-l2','tk-l1','tk-ctr','tk-r1','tk-r2','tk-tail',
+   // A320 family fuel (Oct 2026 fix: these were never cleared, so RESET left the fuel in
+   // on every A320-family aircraft, A321F included)
+   'a320-fuel-block','a320-fuel-trip','a320-fuel-act','a320-fuel-ballast'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
+  // A321F Cargo Loading zone entries
+  document.querySelectorAll('input[id^="a321f-"]').forEach(el => { el.value = ''; });
+  if (typeof updateA321FZonesTotals === 'function') updateA321FZonesTotals();
   ['cockpit','fwd','mid','aft'].forEach(k => { const e = document.getElementById('pax-loc-' + k); if (e) e.value = ''; });
   syncPaxFromLocations(false);
   writeMassInput('fuel-taxi', wbPrefs.taxiA330);
