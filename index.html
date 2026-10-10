@@ -8,7 +8,7 @@
      sequence number for same-day updates) every time a new version is pushed to
      GitHub that the app should pick up. The native shell fetches this file's raw
      text and reads this tag directly — no JS execution needed for the check itself. -->
-<meta name="app-version" content="2026-10-09-10">
+<meta name="app-version" content="2026-10-10-1">
 
 <!-- iOS PWA / Add to Home Screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -294,6 +294,9 @@
   #info-btn { position:absolute; right:0; top:50%; transform:translateY(-50%); background:none; border:none;
     padding:2px; cursor:pointer; color:var(--text-dim); line-height:0; }
   #info-btn:hover, #info-btn.active { color:var(--accent); }
+  /* On the Info screen the aircraft selectors do nothing, so hide them (the ⓘ icon stays). */
+  body.info-open .header-center,
+  body.info-open .header-variant-row .variant-selector { visibility:hidden; }
 
   /* ── INPUTS ── */
   .field {
@@ -5404,17 +5407,27 @@ function toggleInfoPanel() {
     switchTab('calc');                                   // leave the loadsheet if it was open
     document.querySelector('.main').style.display = 'none';
     document.getElementById('info-screen').style.display = 'block';
+    document.body.classList.add('info-open');
     refreshInfoPanel();
-    window.scrollTo(0, 0);
+    resetPageScroll();
   } else {
     closeInfoScreen();
   }
   document.getElementById('info-btn').classList.toggle('active', open);
 }
+// Snap the page back to the top-left, undoing any sideways scroll or iPad zoom drift.
+function resetPageScroll() {
+  if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  window.scrollTo(0, 0);
+  const se = document.scrollingElement || document.documentElement;
+  se.scrollLeft = 0; se.scrollTop = 0; document.body.scrollLeft = 0;
+}
 function closeInfoScreen() {
   document.getElementById('info-screen').style.display = 'none';
+  document.body.classList.remove('info-open');
   document.getElementById('info-btn').classList.remove('active');
   document.querySelector('.main').style.display = '';
+  resetPageScroll();
   if (typeof calculate === 'function') calculate();
 }
 function refreshInfoPanel() {
