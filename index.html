@@ -8,7 +8,7 @@
      sequence number for same-day updates) every time a new version is pushed to
      GitHub that the app should pick up. The native shell fetches this file's raw
      text and reads this tag directly — no JS execution needed for the check itself. -->
-<meta name="app-version" content="2026-10-10-2">
+<meta name="app-version" content="2026-10-12-4">
 
 <!-- iOS PWA / Add to Home Screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1279,6 +1279,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     <div class="variant-selector" id="variant-selector-a330" style="display:none;">
       <button class="variant-btn" onclick="setVariant('A330-200')">-200</button>
       <button class="variant-btn active" onclick="setVariant('A330-300')">-300</button>
+      <button class="variant-btn" onclick="setVariant('A330-300F')">-300F</button>
       <!-- A330-900 NEO button HIDDEN (Sep 2026): its data below is still all placeholder
            (no real CG envelope, fuel or tank data found yet). To bring it back once real data
            is in, just un-comment this line — the 'A330-900' block in VARIANTS is intact:
@@ -1464,7 +1465,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
           </div>
         </div>
         <div class="field" id="pax-field" style="display:none;">
-          <label>Pax <span id="pax-limit-label">Passengers</span></label>
+          <label>Pax <span id="pax-limit-label" style="white-space:normal;overflow:visible;text-overflow:clip;line-height:1.25;">Passengers</span></label>
           <input type="number" id="pax" placeholder="0" min="0" oninput="calculate()">
           <span class="unit">pax</span>
         </div>
@@ -2825,7 +2826,7 @@ function applyFuelSG300() {
   Object.keys(A330_300_BASE_TANKS).forEach(id => v.tanks[id] = Math.round(A330_300_BASE_TANKS[id] * k));   // whole kg, so a carried-over entry never reads as over capacity
   v.totalFuelCapacity = Math.round(A330_300_BASE_CAPACITY * k);
   v.sgScale = k;
-  if (typeof currentVariant !== 'undefined' && currentVariant === 'A330-300') {
+  if (typeof currentVariant !== 'undefined' && isA330_300(currentVariant)) {
     ['l2','l1','r1','r2','tail'].forEach(id => {
       const el = document.getElementById('cap-'+id);
       if (el) el.textContent = 'max '+fmtMass(v.tanks[id]);
@@ -3094,6 +3095,12 @@ const VARIANTS = {
     cgLimits: { lo:14, hi:40 }
   }
 };
+
+// A330-300F (Oct 2026): the freighter uses exactly the A330-300's data — same object, so the
+// fuel SG box and the centre-tank toggle apply to both. The only difference is in the UI:
+// the passenger section offers Cockpit and Fwd only (see setVariant / syncPaxFromLocations).
+VARIANTS['A330-300F'] = VARIANTS['A330-300'];
+const isA330_300 = v => v === 'A330-300' || v === 'A330-300F';
 
 let currentVariant = 'A320';
 let fuelMode = 'standard'; // 'standard' | 'nonstandard'
@@ -4082,7 +4089,7 @@ function setFamily(family) {
 function setVariant(variant) {
   currentVariant = variant;
   // Fuel SG box beside the tail tank: A330-300 only (see A330_300_FUEL_INDEX_BY_SG)
-  document.querySelectorAll('.sg-300-box').forEach(el => el.style.display = (variant === 'A330-300') ? 'flex' : 'none');
+  document.querySelectorAll('.sg-300-box').forEach(el => el.style.display = isA330_300(variant) ? 'flex' : 'none');
 
   // Determine family from variant name
   if (A320_VARIANTS[variant]) {
@@ -4119,15 +4126,26 @@ function setVariant(variant) {
   // Weighted avg arm = (1*5.722 + 2*7.958)/3 = 7.2127 m (≈283.96 in, matching the user's
   // "about 280" figure) → %MAC = (7.2127 - 22.0687)/4.1935*100 = -354.26
   const A321F_PAX_CG = -354.26;
+  // A330-300F (Oct 2026): single occupant box like the A321F — max 6 = 2 jumpseats + 4
+  // supernumeraries. Jumpseat arms are real (A330-300 W&B manual flight-crew table: third
+  // occupant H 9.800 m, fourth occupant H 9.850 m). The supernumerary seat position is an
+  // ESTIMATE (H 12.0 m, just aft of the cockpit, door-1 area) until a P2F seat table is
+  // available. Weighted avg arm = (9.800 + 9.850 + 4*12.0)/6 = 11.275 m
+  // -> %MAC = (11.275 - 34.532)/7.270*100 = -319.9
+  const FIXED_OCCUPANTS = {
+    'A321F':     { max: 3, cg: A321F_PAX_CG, label: 'Cockpit and supernumerary' },
+    'A330-300F': { max: 6, cg: -319.9,       label: 'Cockpit and supernumerary' }
+  };
+  const fixedOcc = FIXED_OCCUPANTS[variant];
   const paxLimitLabel = document.getElementById('pax-limit-label');
   const paxCgLabel    = document.getElementById('pax-cg-label');
   const paxCgEl       = document.getElementById('pax-cg');
   const paxEl         = document.getElementById('pax');
-  if (variant === 'A321F') {
-    if (paxLimitLabel) paxLimitLabel.textContent = 'Max 3 (1 jumpseat + 2 supernumeraries)';
+  if (fixedOcc) {
+    if (paxLimitLabel) paxLimitLabel.textContent = fixedOcc.label;
     if (paxCgLabel)    paxCgLabel.textContent    = 'Occupant avg arm — auto set';
-    if (paxCgEl)       { paxCgEl.value = A321F_PAX_CG; paxCgEl.readOnly = true; paxCgEl.style.opacity = '0.6'; }
-    if (paxEl)         paxEl.max = 3;
+    if (paxCgEl)       { paxCgEl.value = fixedOcc.cg; paxCgEl.readOnly = true; paxCgEl.style.opacity = '0.6'; }
+    if (paxEl)         paxEl.max = fixedOcc.max;
   } else {
     if (paxLimitLabel) paxLimitLabel.textContent = 'Passengers';
     if (paxCgLabel)    paxCgLabel.textContent    = '% MAC (cabin LCG)';
@@ -4135,7 +4153,7 @@ function setVariant(variant) {
     if (paxEl)         paxEl.removeAttribute('max');
   }
   {
-    const isF = (variant === 'A321F');
+    const isF = !!fixedOcc;   // A321F and A330-300F: single occupant box instead of pax by location
     const blk = document.getElementById('pax-loc-block'), fld = document.getElementById('pax-field');
     if (blk) blk.style.display = isF ? 'none' : '';
     if (fld) fld.style.display = isF ? '' : 'none';
@@ -4246,7 +4264,7 @@ function setVariant(variant) {
     const ctrToggleRow = document.getElementById('ctr-toggle-row');
     const stdCtrCol    = document.getElementById('std-ctr-col');
     const nsCtrCol     = document.getElementById('nonstd-ctr-col');
-    if (variant === 'A330-300') {
+    if (isA330_300(variant)) {
       if (ctrToggleRow) ctrToggleRow.style.display = '';
       a300CtrFitted = false;
       const btn  = document.getElementById('ctr-toggle-btn');
@@ -4291,7 +4309,7 @@ const PAX_LOC_ARMS = {
 function syncPaxFromLocations(recalc) {
   const paxEl = document.getElementById('pax'), cgEl = document.getElementById('pax-cg');
   if (!paxEl || !cgEl) return;
-  if (currentVariant === 'A321F') { if (recalc) calculate(); return; }   // fixed-occupant setup, untouched
+  if (currentVariant === 'A321F' || currentVariant === 'A330-300F') { if (recalc) calculate(); return; }   // fixed-occupant setup, untouched
   const arms = PAX_LOC_ARMS[currentVariant] || PAX_LOC_ARMS['A320'];
   let n = 0, mom = 0;
   ['cockpit','fwd','mid','aft'].forEach(k => {
