@@ -8,7 +8,7 @@
      sequence number for same-day updates) every time a new version is pushed to
      GitHub that the app should pick up. The native shell fetches this file's raw
      text and reads this tag directly — no JS execution needed for the check itself. -->
-<meta name="app-version" content="2026-10-14-2">
+<meta name="app-version" content="2026-10-14-7">
 
 <!-- iOS PWA / Add to Home Screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2178,25 +2178,25 @@ function setUnitMode(mode) {
 }
 
 // A330-200 CTR+Trim lookup table direct from QRH (interpolated)
-const A200_POST_TABLE = [
+const A200_POST_TABLE = [   // Oct 2026: kg columns scaled x0.97769 to SG 0.785 capacities (see A330-200 tanks)
   [0,0,0],
-  [76204,408,2495],
-  [78018,2041,2676],
-  [79832,3674,2858],
-  [81647,5307,3039],
-  [83461,6940,3221],
-  [85275,8573,3402],
-  [87090,10206,3583],
-  [88904,11839,3765],
-  [90718,13472,3946],
-  [92533,15105,4128],
-  [94347,16738,4309],
-  [96162,18370,4491],
-  [97976,20003,4672],
-  [99790,21636,4853],
-  [101605,23315,4990],
-  [103419,25129,4990],
-  [111674,33384,4990],
+  [74504,399,2439],
+  [76278,1995,2616],
+  [78051,3592,2794],
+  [79826,5189,2971],
+  [81599,6785,3149],
+  [83373,8382,3326],
+  [85147,9978,3503],
+  [86921,11575,3681],
+  [88694,13171,3858],
+  [90469,14768,4036],
+  [92243,16365,4213],
+  [94017,17960,4391],
+  [95791,19557,4568],
+  [97564,21153,4745],
+  [99339,22795,4891],
+  [101112,24568,4891],
+  [109185,32624,4891],
 ];
 
 // A330-300 QRH refuel distribution table (operator QRH, A330-342)
@@ -2395,6 +2395,16 @@ const A320_CEO_FUEL_INDEX = [
   [14500,-4.15],[15000,-4.93],[15500,-5.71],[16000,-6.48],[16500,-7.26],[17000,-8.04],[17500,-8.81],
   [18000,-9.59],[18500,-10.37],[19000,-11.22]
 ];
+// A320neo fuel index correction (same index formula as the ceo: ref 18.85 m, C=1000).
+// The source prints integer bands; each band is entered at its midpoint so the tool interpolates
+// smoothly between them. Bands: 2401-3700 +1, 3701-5000 0, 5001-6300 -1, 6301-8500 -2,
+// 8501-11700 -3, 11701-13600 -2, 13601-14600 -3, 14601-15300 -4, 15301-16300 -5, 16301-17000 -6,
+// 17001-17600 -7, 17601-18800 -8, 18801-19200 -9, 19201-19500 -10. The 0-2400 band (+2) is left out:
+// a rounded +2 at very low fuel implies an unrealistic fuel CG, so below 3050 kg the first row's CG is held.
+const A320NEO_FUEL_INDEX = [
+  [3050,1],[4350,0],[5650,-1],[7400,-2],[10100,-3],[12650,-2],[14100,-3],[14950,-4],
+  [15800,-5],[16650,-6],[17300,-7],[18200,-8],[19000,-9],[19350,-10]
+];
 // CG (%MAC) of the FUEL ALONE for a total quantity F kg, from a variant's fuelIndexTable.
 function fuelCGFromIndexTable(v, F) {
   const t = v && v.fuelIndexTable;
@@ -2526,8 +2536,8 @@ const A320_VARIANTS = {
     // hold 4 +3.72/500 kg -> +202.2; bulk 5 +2.49/250 kg -> +262.4. Good to a few %MAC (photo scan).
     // Same split Hold 3 / Hold 4 inputs as the ceo.
     cargo:{ fwd:-122.3, aft:158.4, bulk:262.4 },   // Hold 3+4 COMBINED (Oct 9). 158.4 = measured 120.3 (hold 3) / 202.2 (hold 4) weighted 53.5/46.5 like the ceo's max loads. To restore the split: aft:120.3, h3:120.3, h4:202.2
-    // User: assume the neo's fuel index table is the same as the ceo's until the overleaf table arrives.
-    fuelIndexTable: A320_CEO_FUEL_INDEX,
+    // Fuel index from an A320neo (LEAP-1A26) Operational Data Manual "Fuel Index Correction" table.
+    fuelIndexTable: A320NEO_FUEL_INDEX,
     // ZFW envelope vertices specified directly by the user (Airbus A320-271N Load and Trim
     // Sheet, delivery-ferry) — exact as given:
     // (20.4,40300)->(19.5,48500)->(20.2,53500)->(20.2,56000)->(20.6,60000)->(20.5,64300)->
@@ -2979,7 +2989,7 @@ const VARIANTS = {
   // ═══════════════════════════════════════════════════════
   'A330-200': {
     mtow: 233000, mlw: 182000, mzfw: 170000, mow: 116000, // MTOW updated to 233,000 kg per the operator A330-200 chart (was 242,000 placeholder); MOW added, matches the envelope floor
-    tanks: { l2:2926, l1:33725, ctr:33384, r1:33725, r2:2926, tail:4990 },
+    tanks: { l2:2865, l1:32970, ctr:32624, r1:32970, r2:2865, tail:4891 },   // Oct 2026: kg at SG 0.785 = Airbus A330 Aircraft Characteristics usable fuel 139,090 l = 109,185 kg (wing/trim same as the -300; ctr = remainder). Old values (sum 111,676) were ~2.3% high; the QRH fill thresholds and A200_POST_TABLE below were scaled by the same 0.97769
     // Standard mode uses A330_200_FUEL_ARM_PCTMAC directly (see useFuelArmTable200 below)
     // and never touches these. tankArms/tankArmTables below are the NON-STANDARD-mode
     // fallback only (manual per-tank entry) — outer/inner/trim borrowed from A330-300's
@@ -2992,11 +3002,11 @@ const VARIANTS = {
     useFuelArmTable200: true, // standard mode: use the real operator-derived combined arm curve instead of per-tank sum
     fuelCG: { empty: 28.2, full: 25.5 },
     // QRH fill sequence thresholds
-    outerFillStart: 9208,   // outers start at 9,208 kg
-    outerFillEnd:   15059,  // outers full (2,926 each) at 15,059 kg; inners resume
-    innerFullAt:    73301,  // inners full at ~73,301 kg; CTR + trim start together
-    trimThreshold:  73301,  // trim starts same point as CTR
-    ctrFillStart:   73301,
+    outerFillStart: 9003,   // outers start at 9,003 kg (QRH 9,208 scaled to SG 0.785)
+    outerFillEnd:   14723,  // outers full (2,865 each) at 14,723 kg; inners resume
+    innerFullAt:    71670,  // inners full at 71,670 kg; CTR + trim start together
+    trimThreshold:  71670,  // trim starts same point as CTR
+    ctrFillStart:   71670,
     qrhPostTable:   A200_POST_TABLE,
     // Cargo arms (Oct 2026) MEASURED from an operator A330-243 Load and Trim Sheet's cargo
     // index bars (hatch pitch vs the index scale, 16.89 px per index unit; index formula
@@ -3692,7 +3702,10 @@ function pointInPolygon(cg, weight, env) {
 }
 function isWithinEnvelope(cg, weight, env) {
   if (!(weight > 0)) return true;
-  return pointInPolygon(cg, weight, env);
+  // Oct 2026: a load exactly ON a horizontal edge (e.g. TOW = MTOW, LW = MLW) fell through the
+  // ray-cast test and was flagged out of envelope. Treat the edge as inside by also testing a
+  // hair (0.01 kg) below and above the actual weight.
+  return pointInPolygon(cg, weight, env) || pointInPolygon(cg, weight - 0.01, env) || pointInPolygon(cg, weight + 0.01, env);
 }
 
 function getEffectiveLimits(v) {
@@ -4151,13 +4164,15 @@ function setVariant(variant) {
   const A321F_PAX_CG = -354.26;
   // A330-300F (Oct 2026): single occupant box like the A321F — max 6 = 2 jumpseats + 4
   // supernumeraries. Jumpseat arms are real (A330-300 W&B manual flight-crew table: third
-  // occupant H 9.800 m, fourth occupant H 9.850 m). The supernumerary seat position is an
-  // ESTIMATE (H 12.0 m, just aft of the cockpit, door-1 area) until a P2F seat table is
-  // available. Weighted avg arm = (9.800 + 9.850 + 4*12.0)/6 = 11.275 m
-  // -> %MAC = (11.275 - 34.532)/7.270*100 = -319.9
+  // occupant H 9.800 m, fourth occupant H 9.850 m). Supernumeraries placed at the L1/R1
+  // cabin-crew station (Oct 2026): H ~12.30 m = Airbus door 1 at 5.85 m from the nose + the
+  // ~6.45 m nose offset, matching the A330-300 W&B folder's L1/R1 index of -8 per 81 kg.
+  // Still an approximation until a P2F seat table is available.
+  // Weighted avg arm = (9.800 + 9.850 + 4*12.30)/6 = 11.475 m
+  // -> %MAC = (11.475 - 34.532)/7.270*100 = -317.2
   const FIXED_OCCUPANTS = {
     'A321F':     { max: 3, cg: A321F_PAX_CG, label: 'Cockpit and supernumerary' },
-    'A330-300F': { max: 6, cg: -319.9,       label: 'Cockpit and supernumerary' }
+    'A330-300F': { max: 6, cg: -317.2,       label: 'Cockpit and supernumerary' }
   };
   const fixedOcc = FIXED_OCCUPANTS[variant];
   const paxLimitLabel = document.getElementById('pax-limit-label');
@@ -4326,7 +4341,7 @@ const PAX_LOC_ARMS = {
   'A321':    { cockpit:-389.8, fwd:-209.0, mid: 45.0, aft:278.0 },   // estimate
   'A321NEO': { cockpit:-389.8, fwd:-209.0, mid: 45.0, aft:278.0 },   // estimate
   'A330-200':{ cockpit:-295.9, fwd:-183.3, mid:-19.9, aft:170.3 },   // Oct 2026: fwd/mid/aft = cabin zones OA/OB/OC MEASURED from an A330-243 load & trim sheet (84 kg pax); cockpit = A330 jumpseat station ~9.83 m (same nose geometry as the -300) on the -200's LEMAC 31.338 m
-  'A330-300':{ cockpit:-339.8, fwd:-227.0, mid: 48.0, aft:282.0 },   // cockpit (Oct 2026) = jumpseats from the A330-300 W&B manual (H 9.800 / 9.850 m); fwd/mid/aft still estimates
+  'A330-300':{ cockpit:-339.8, fwd:-213.5, mid:-14.8, aft:198.0 },   // cockpit = jumpseats from the A330-300 W&B manual (H 9.800 / 9.850 m). fwd/mid/aft (Oct 2026) = REAL: the operator A330-300 W&B manual's cabin-section centroids (AHM 565 sheet 7) OA -17.343 / OB -2.891 / OC +12.575 m from the 36.35 m reference -> H 19.007 / 33.459 / 48.925 m (checked against its passenger index table: 28 / 136 / 129 pax -> -157 / -127 / +526 at ~81 kg). Replaces the door-geometry estimates (-205.4/-20.0/185.0).
   'A330-900':{ cockpit:-392.0, fwd:-227.0, mid: 48.0, aft:282.0 }    // estimate
 };
 function syncPaxFromLocations(recalc) {
