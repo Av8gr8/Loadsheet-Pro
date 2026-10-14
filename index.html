@@ -8,7 +8,7 @@
      sequence number for same-day updates) every time a new version is pushed to
      GitHub that the app should pick up. The native shell fetches this file's raw
      text and reads this tag directly — no JS execution needed for the check itself. -->
-<meta name="app-version" content="2026-10-14-26">
+<meta name="app-version" content="2026-10-14-32">
 
 <!-- iOS PWA / Add to Home Screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1370,7 +1370,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         <ol>
           <li>Start in <b>Standard</b>. Enter the normal block fuel (and SG if needed), trip and taxi.</li>
           <li>Tap <b>&#9888; Non-Standard</b>. The normal QRH split carries over into each tank box &mdash; nothing to guess.</li>
-          <li>Adjust only the tanks that differ &mdash; for example raise the tail. Block fuel becomes the sum of the tanks.</li>
+          <li>Adjust only the tanks that differ &mdash; for example increase the tail tank. Block fuel becomes the sum of the tanks.</li>
           <li><b>Tail Ballast ON</b><br><b>TAIL FUEL UNUSABLE.</b> Use this setting to ensure an AFT enough CG for Takeoff and most importantly, landing. Fuel feed will proceed only from the wing tanks.</li>
           <li><b>Tail Ballast OFF</b> is normal operation: the trim tank transfers forward into the inner tanks from descent through FL245 or 35 min to destination, so the <b>tail lands empty</b>.</li>
           <li>With Tail Ballast on, make sure the wing tanks alone hold all the taxi and trip fuel plus reserves &mdash; landing fuel can never be less than the tail quantity.</li>
@@ -1545,7 +1545,7 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
         </div>
         <div class="field" style="display:none;">
           <label>Avg Pax Mass <span>incl. carry-on</span></label>
-          <input type="number" id="pax-mass" value="90" oninput="calculate()">
+          <input type="number" id="pax-mass" value="88" oninput="calculate()">
           <span class="unit unit-mass">kg</span>
         </div>
         <div class="field" style="display:none;">
@@ -2506,10 +2506,13 @@ const A320_VARIANTS = {
   // ═══════════════════════════════════════════════════════
   'A319': {
     family:'A320', mtow:70000, mlw:61000, mzfw:57000, mow:40000,
-    tanks:{ l_outer:690, l_inner:4500, ctr:4500, r_inner:4500, r_outer:690, act:0 },
+    tanks:{ l_outer:690, l_inner:5436, ctr:6476, r_inner:5436, r_outer:690, act:0 },   // Oct 2026: same tanks as the A320 (Airbus A319 AC: 15,609 l wing + 8,250 l centre, IAE). Was 4,500/4,500 placeholders (14.9 t total).
+    // Fuel CG (Oct 2026): an A319-111 load and trim sheet's printed fuel index table matches the A320 ceo table
+    // within its integer rounding (same wing, same %MAC-based index), so the finer A320 ceo table is used.
+    fuelIndexTable: A320_CEO_FUEL_INDEX,
     tankArms:{ l_outer:16.7, l_inner:16.7, ctr:33.4, r_inner:16.7, r_outer:16.7, act:25.0 },
     qrhTable:'A320', actCapacity:0,
-    cargo:{ fwd:-271.0, aft:238.0, bulk:318.0 },
+    cargo:{ fwd:-110.9, aft:126.8, bulk:225.3 },   // Oct 2026 REAL: measured from an A319-111 load and trim sheet's index bars (I = (CG-25)W/23846+50, so arms come out directly in %MAC); holds 1 / 4 / 5. Confirms the earlier Airbus-geometry estimate (-109.7/136.8/228.2).
     // LW envelope vertices specified directly by the user — exact as given:
     // (16.5,40000)->(15.8,53000)->(21.5,61000)->(37.2,61000)->(37,50000)->(31.5,40000)->close.
     // ZFW envelope vertices specified directly by the user — exact as given:
@@ -2558,7 +2561,7 @@ const A320_VARIANTS = {
     // Good to about +/-0.1 m (well under 0.1 %MAC of aircraft CG per tonne of cargo).
     // 'fwd' is hold 1 (the sheet has no index scale for compartment 2); 'aft'/'h3' is hold 3 and 'h4' is
     // hold 4 — they are 80 %MAC apart so this variant has SEPARATE Hold 3 / Hold 4 inputs.
-    cargo:{ fwd:-128.8, aft:159.0, bulk:276.2 },   // Hold 3+4 COMBINED (Oct 9: split not worth it). 159.0 = sheet arms 121.1 (hold 3) / 202.6 (hold 4) weighted by their max loads 2,426 / 2,110 kg. To restore the split inputs: aft:121.1, h3:121.1, h4:202.6 (the UI and calc switch on cargo.h4 being defined)
+    cargo:{ fwd:-128.8, aft:159.0, bulk:262.2 },   // bulk Oct 2026: 276.2 -> 262.2 (A320neo sheet 262.4 and an A320 training sheet 261.9 agree; same fuselage; the ceo sheet's 250 kg bulk steps were likely misread)   // Hold 3+4 COMBINED (Oct 9: split not worth it). 159.0 = sheet arms 121.1 (hold 3) / 202.6 (hold 4) weighted by their max loads 2,426 / 2,110 kg. To restore the split inputs: aft:121.1, h3:121.1, h4:202.6 (the UI and calc switch on cargo.h4 being defined)
     fuelIndexTable: A320_CEO_FUEL_INDEX,     // fuel CG from the sheet's table — supersedes tankArms below for CG
     // TOW envelope vertices specified directly by the user (not digitized) — exact as given:
     // (21,37000)->(18.5,53000)->(20.5,63000)->(19.5,72000)->(21.3,73500)->(30.3,77000)->
@@ -2653,12 +2656,12 @@ const A320_VARIANTS = {
   'A321': {
     family:'A320', mtow:93500, mlw:77800, mzfw:73800, mow:47000,
     tanks:{ l_outer:691, l_inner:5435, ctr:6476, r_inner:5435, r_outer:691, act:3000 },
-    tankArms:{ l_outer:3.13, l_inner:3.13, ctr:19.82, r_inner:3.13, r_outer:3.13, act:25.0 },
+    tankArms:{ l_outer:3.13, l_inner:3.13, ctr:19.82, r_inner:3.13, r_outer:3.13, act:140.0 },   // act (Oct 2026, user): same as the A321neo (~140 %MAC, aft hold); was a 25.0 placeholder
     // Real WBM-derived arm-vs-quantity tables (see A321_WING_TANK_PCTMAC above) — used in
     // place of the constant tankArms.l_outer/l_inner/ctr for the fuel moment calc.
     wingTankArmTable: A321_WING_TANK_PCTMAC, centerTankArmTable: A321_CTR_TANK_PCTMAC,
     qrhTable:'A321', actCapacity:3000,
-    cargo:{ fwd:-271.6, aft:240.2, bulk:327.5 },
+    cargo:{ fwd:-191.3, aft:204.0, bulk:338.6 },   // Oct 2026, no-ACT basis (user: ACTs rarely flown). Holds 1/2/4/5 = -248.4/-155.0/+265.3/+338.6 from an A321-271N sheet's printed index tables (fits within 1 kg); hold 3 = +165.2 measured on an A321 (Y238) training sheet (full-size hold; on the ACT-equipped neo sheet it is a small 1,121 kg section at +204.9). fwd = 1+2 by max load; aft = 3+4 weighted by hold length (125:80) -> +204.0. Training sheet independently confirms holds 1/2/4/5 within 0.3 m.
     // Digitized from the user's second A321 loadsheet screenshot (A321-231; MTOW 93,500 /
     // MLW 77,800 / MZFW 73,800 kg) — supersedes the earlier image-derived envelope, which used
     // a different weight combination (89,000/75,500/71,500) under the same "A321" label. Flagged
@@ -2695,7 +2698,7 @@ const A320_VARIANTS = {
   'A321NEO': {
     family:'A320', mtow:93500, mlw:77300, mzfw:73300, mow:46000,
     tanks:{ l_outer:691, l_inner:5435, ctr:6476, r_inner:5435, r_outer:691, act:3000 },
-    tankArms:{ l_outer:3.13, l_inner:3.13, ctr:19.82, r_inner:3.13, r_outer:3.13, act:25.0 },
+    tankArms:{ l_outer:3.13, l_inner:3.13, ctr:19.82, r_inner:3.13, r_outer:3.13, act:140.0 },   // act (Oct 2026): ~140 %MAC from the A321-271N sheet's fuel index table above 18.5 t (ACT in the aft hold); was a 25.0 placeholder
     wingTankArmTable: A321_WING_TANK_PCTMAC, centerTankArmTable: A321_CTR_TANK_PCTMAC,
     // Real refuel-sequence table (operator A321-251NX QRH) — wings fill before
     // center; also used to model center-tank-first burn order for landing CG.
@@ -2718,7 +2721,7 @@ const A320_VARIANTS = {
     // (15.1,46000)->(14.3,71500)->(17,77300)->(37.5,77300)->(38.9,75500)->(37.2,46000)->close.
     lwEnv:[[15.1,46000],[14.3,71500],[17,77300],[37.5,77300],[38.9,75500],[37.2,46000],[15.1,46000]],
     qrhTable:'A321', actCapacity:3000,
-    cargo:{ fwd:-271.6, aft:240.2, bulk:327.5 },
+    cargo:{ fwd:-191.3, aft:204.0, bulk:338.6 },   // Oct 2026, no-ACT basis (user: ACTs rarely flown). Holds 1/2/4/5 = -248.4/-155.0/+265.3/+338.6 from an A321-271N sheet's printed index tables (fits within 1 kg); hold 3 = +165.2 measured on an A321 (Y238) training sheet (full-size hold; on the ACT-equipped neo sheet it is a small 1,121 kg section at +204.9). fwd = 1+2 by max load; aft = 3+4 weighted by hold length (125:80) -> +204.0. Training sheet independently confirms holds 1/2/4/5 within 0.3 m.
     // ZFW envelope vertices specified directly by the user — exact as given:
     // (16.8,46000)->(16,52800)->(19.1,58000)->(18.9,59000)->(21.5,64000)->(21,70500)->
     // (21.9,71500)->(19.5,72500)->(20,73300)->(38.9,73300)->(37.2,46000)->close.
@@ -2747,7 +2750,7 @@ const A320_VARIANTS = {
     // the wing/center tanks), so the real-WBM arm tables apply here too.
     wingTankArmTable: A321_WING_TANK_PCTMAC, centerTankArmTable: A321_CTR_TANK_PCTMAC,
     qrhTable:'A321', actCapacity:0,
-    cargo:{ fwd:-271.6, aft:240.2, bulk:327.5, k1:383.5, k2:420.8 },
+    cargo:{ fwd:-191.3, aft:204.0, bulk:338.6, k1:383.5, k2:420.8 },   // lower deck from the A321-271N sheet (as A321); k1/k2 from the WBM
     isFreighter: true,
     // ZFW envelope vertices specified directly by the user (not digitized) — exact as given:
     // (11.6,47500)->(11.6,71000)->(12,71500)->(41,71500)->(41,59000)->(34,47500)->close.
@@ -4460,19 +4463,19 @@ function setVariant(variant) {
   calculate();
 }
 // ── Pax by location ─────────────────────────────────────────────────────────
-// Every person is a fixed standard mass (the old "Avg Pax Mass" field, default 90 kg).
-const PAX_STD_KG = 90;
+// Every person is a fixed standard mass (user, Oct 2026: 88 kg across all fleets; was 90).
+const PAX_STD_KG = 88;
 // Arm (%MAC) of each location. SOURCES / CONFIDENCE:
 //  A320 ceo : fwd/mid/aft from the A320-232 load & trim sheet's cabin zones (A | B+C averaged | D), assuming ~84 kg per pax
 //             where the sheet's step size is not printed; cockpit from the A321F occupant arm (H 5.722 m, nose section).
 //  A320NEO  : fwd = zone OA, mid = average of OB and OC, aft = OD, all MEASURED from the A320-271N sheet (84 kg/pax).
-//  A319, A321 family, A330s: ESTIMATES (no sheet supplied) — replace when real data arrives.
+//  A319, A321 family: ESTIMATES from Airbus Aircraft Characteristics door geometry (Oct 2026) — replace when a real sheet arrives.
 const PAX_LOC_ARMS = {
   'A320':    { cockpit:-288.1, fwd:-158.0, mid: 51.3, aft:245.7 },
   'A320NEO': { cockpit:-288.1, fwd:-155.0, mid: 48.9, aft:257.3 },
-  'A319':    { cockpit:-288.1, fwd:-158.0, mid: 51.3, aft:245.7 },   // estimate: A320 ceo values
-  'A321':    { cockpit:-389.8, fwd:-209.0, mid: 45.0, aft:278.0 },   // estimate
-  'A321NEO': { cockpit:-389.8, fwd:-209.0, mid: 45.0, aft:278.0 },   // estimate
+  'A319':    { cockpit:-249.9, fwd:-122.7, mid: 28.3, aft:193.7 },   // Oct 2026: fwd = zone OA (rows 1-5) MEASURED on an A319-111 sheet at 80 kg/pax; mid/aft = door-geometry split of zone OB (rows 6-21), shifted -15.9 so their average matches the sheet's OB (+111.0). Cockpit from geometry.
+  'A321':    { cockpit:-389.8, fwd:-221.3, mid: -8.0, aft:267.6 },   // Oct 2026 REAL: A321-271N load and trim sheet cabin index tables (0A rows 1-2, 0B 3-8, 0C 9-22, 0D 23-35), at 75 kg/pax (the value that centres 0C/0D between the Airbus door positions); fwd = 0A+0B (8+36 seats)
+  'A321NEO': { cockpit:-389.8, fwd:-221.3, mid: -8.0, aft:267.6 },   // Oct 2026 REAL: A321-271N load and trim sheet cabin index tables (0A rows 1-2, 0B 3-8, 0C 9-22, 0D 23-35), at 75 kg/pax (the value that centres 0C/0D between the Airbus door positions); fwd = 0A+0B (8+36 seats)
   'A330-200':{ cockpit:-295.9, fwd:-183.3, mid:-19.9, aft:170.3 },   // Oct 2026: fwd/mid/aft = cabin zones OA/OB/OC MEASURED from an A330-243 load & trim sheet (84 kg pax); cockpit = A330 jumpseat station ~9.83 m (same nose geometry as the -300) on the -200's LEMAC 31.338 m
   'A330-300':{ cockpit:-339.8, fwd:-213.5, mid:-14.8, aft:198.0 },   // cockpit = jumpseats from the A330-300 W&B manual (H 9.800 / 9.850 m). fwd/mid/aft (Oct 2026) = REAL: the operator A330-300 W&B manual's cabin-section centroids (AHM 565 sheet 7) OA -17.343 / OB -2.891 / OC +12.575 m from the 36.35 m reference -> H 19.007 / 33.459 / 48.925 m (checked against its passenger index table: 28 / 136 / 129 pax -> -157 / -127 / +526 at ~81 kg). Replaces the door-geometry estimates (-205.4/-20.0/185.0).
   'A330-900':{ cockpit:-392.0, fwd:-227.0, mid: 48.0, aft:282.0 }    // estimate
