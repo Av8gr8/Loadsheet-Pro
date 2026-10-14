@@ -8,7 +8,7 @@
      sequence number for same-day updates) every time a new version is pushed to
      GitHub that the app should pick up. The native shell fetches this file's raw
      text and reads this tag directly — no JS execution needed for the check itself. -->
-<meta name="app-version" content="2026-10-14-10">
+<meta name="app-version" content="2026-10-14-15">
 
 <!-- iOS PWA / Add to Home Screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1358,18 +1358,18 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
       </details>
       <details>
         <summary>A330-300 &mdash; non-standard fuel &amp; locking the tail</summary>
-        <p>Use <b>Non-Standard</b> when the tanks don't match the QRH &mdash; for example extra fuel put in the tail for CG, or the trim tank locked.</p>
         <ol>
-          <li>Start in <b>Standard</b>: enter the block fuel (and SG if needed), trip and taxi.</li>
-          <li>Tap <b>&#9888; Non-Standard</b>. The normal QRH split is carried over into each tank box, so nothing has to be guessed.</li>
-          <li>Adjust only the tanks that differ &mdash; for example add fuel to the tail. Block fuel becomes the sum of the tanks.</li>
-          <li><b>Tail Ballast OFF:</b> tail fuel burns along with the other tanks, following the normal sequence from the quantities you entered.</li>
-          <li><b>Tail Ballast ON:</b> the tail quantity stays exactly as entered through takeoff and landing. All taxi and trip fuel comes out of the wing tanks. Use this when tail fuel won't transfer (trim tank locked or inhibited) and you need it there for the landing CG.</li>
+          <li>Start in <b>Standard</b>. Enter the normal block fuel (and SG if needed), trip and taxi.</li>
+          <li>Tap <b>&#9888; Non-Standard</b>. The normal QRH split carries over into each tank box &mdash; nothing to guess.</li>
+          <li>Adjust only the tanks that differ &mdash; for example raise the tail. Block fuel becomes the sum of the tanks.</li>
+          <li><b>Tail Ballast ON</b> if the tail fuel will stay there (trim tank locked or transfer inhibited): the tail <b>fuel is unusable</b> &mdash; it is held exactly as entered through takeoff and landing, and all taxi and trip fuel comes out of the wing tanks.</li>
+          <li><b>Tail Ballast OFF</b> is normal operation: at landing the tail holds what the refuel table puts there for the remaining fuel (about 2.4 t with 40 t or more on board, nothing below about 37 t). Any extra tail fuel transfers forward into the inner tanks.</li>
           <li>With Tail Ballast on, make sure the wing tanks alone hold all the taxi and trip fuel plus reserves &mdash; landing fuel can never be less than the tail quantity.</li>
         </ol>
-        <div class="tut-ex"><p><b>Example:</b> DOW 122,000 kg at 22.0 %MAC; inners 7,000 kg each, tail 4,891 kg; taxi 500 kg, trip 8,000 kg.<br>Landing CG is <b>30.5 %</b> with Tail Ballast off and <b>35.4 %</b> with it on &mdash; the same fuel, about 5 % apart. Set the toggle to match what the aircraft will actually do.</p></div>
+        <div class="tut-ex"><p><b>Example:</b> DOW 122,000 kg at 22.0 %MAC. Standard: block 30,000, taxi 500, trip 20,000 &rarr; takeoff CG 20.1 %, landing CG 20.0 %.<br>Switch to Non-Standard, raise the tail to 4,891 kg (block becomes 34,891) and turn Tail Ballast on &rarr; takeoff CG 32.7 %, landing CG 34.4 %.<br>Same load with Tail Ballast off &rarr; landing CG 22.8 %, because the tail fuel has transferred forward.</p></div>
         <ul>
-          <li>Locking the tail moves the landing CG aft &mdash; watch the aft limit at light landing weights.</li>
+          <li>Locking fuel in the tail moves both CGs well aft &mdash; watch the aft limit, especially at light landing weights.</li>
+          <li>Going back to Standard and then Non-Standard again reloads the normal split, overwriting manual changes &mdash; make tank changes last.</li>
           <li>The <b>-300F</b> works the same way; its single box covers the cockpit and supernumerary occupants.</li>
           <li>On the <b>-200</b>, prefer Standard: its non-standard per-tank arms are approximate.</li>
         </ul>
@@ -3736,8 +3736,36 @@ function landingFuelCG(originalBreakdown, originalTotal, landingKg, v, mode, tai
     return { kg: landingKg, cg: standardFuelCG(landingKg, v), breakdown: [] };
   }
   const tailKg = originalBreakdown.find(t=>t.id==='tail')?.kg || 0;
-  const excludeIds = (tailBallast && tailKg > 0) ? ['tail'] : [];
-  return realEntriesArm(originalBreakdown, originalTotal, landingKg, v, excludeIds);
+  if (tailKg <= 0) return realEntriesArm(originalBreakdown, originalTotal, landingKg, v, []);
+  if (tailBallast) return realEntriesArm(originalBreakdown, originalTotal, landingKg, v, ['tail']);
+  // Tail Ballast OFF (Oct 2026, user-confirmed): trim fuel transfers forward into the inner
+  // tanks before landing. Start from the usual burn-down of the real entries, then any tail
+  // fuel ABOVE what the normal (standard) refuel sequence holds in the tail at this landing fuel
+  // is moved into the inners (split equally, up to their capacity). The user confirmed the tail
+  // follows the refuel table at landing (e.g. ~2.4 t remains with 40 t+ landing fuel after a
+  // demo flight); below ~37 t the table holds nothing in the tail, so the tail lands empty. An untouched
+  // carry-over from Standard therefore still matches Standard exactly. Previously the extra
+  // tail fuel was preserved through the burn, which left it in the tail at landing and could
+  // put the landing CG further aft than with the tail locked.
+  const base = realEntriesArm(originalBreakdown, originalTotal, landingKg, v, []);
+  const { ids, fills } = standardTankFills(landingKg, v);
+  const normalTail = fills[ids.indexOf('tail')] || 0;
+  const bd = base.breakdown.map(t => ({ ...t }));
+  const tailRow = bd.find(t => t.id === 'tail');
+  const excess = tailRow ? Math.max(tailRow.kg - normalTail, 0) : 0;
+  if (excess <= 1e-6) return base;
+  const inners = bd.filter(t => t.id === 'l1' || t.id === 'r1');
+  let toMove = excess;
+  for (let pass = 0; pass < 3 && toMove > 1e-6; pass++) {
+    const open = inners.filter(t => (v.tanks[t.id] || 0) - t.kg > 1e-6);
+    if (!open.length) break;
+    const share = toMove / open.length;
+    open.forEach(t => { const add = Math.min(share, (v.tanks[t.id] || 0) - t.kg); t.kg += add; toMove -= add; });
+  }
+  tailRow.kg -= (excess - toMove);
+  let kg = 0, moment = 0;
+  bd.forEach(t => { t.arm = tankArm(t.id, t.kg, v); kg += t.kg; moment += t.kg * t.arm; });
+  return { kg, cg: kg > 0 ? moment / kg : 0, breakdown: bd };
 }
 
 // ── Main calculation
