@@ -8,7 +8,7 @@
      sequence number for same-day updates) every time a new version is pushed to
      GitHub that the app should pick up. The native shell fetches this file's raw
      text and reads this tag directly — no JS execution needed for the check itself. -->
-<meta name="app-version" content="2026-10-14-7">
+<meta name="app-version" content="2026-10-14-10">
 
 <!-- iOS PWA / Add to Home Screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -291,6 +291,14 @@
   .info-row input { width:80px; text-align:right; box-sizing:border-box; background:#0a0a0a; border:1px solid #2c2c2c;
     color:#f0f0f0; font-family:'Futura',sans-serif; font-weight:600; letter-spacing:0.5px; font-size:13px; padding:4px 6px; border-radius:3px; }
   .info-row .variant-btn { margin-left:4px; }
+  .info-tut { display:flex; flex-direction:column; gap:6px; }
+  .info-tut details { border:1px solid var(--border); border-radius:3px; background:#0a0a0a; padding:7px 9px; }
+  .info-tut summary { cursor:pointer; font-size:13px; font-family:var(--cond); letter-spacing:1px; text-transform:uppercase; color:var(--text); }
+  .info-tut details[open] summary { color:var(--accent); margin-bottom:4px; }
+  .info-tut ol, .info-tut ul { margin:4px 0 4px 18px; padding:0; }
+  .info-tut li, .info-tut p { font-size:12px; color:var(--text-dim); line-height:1.45; margin:0 0 4px; }
+  .info-tut b { color:var(--text); font-weight:600; }
+  .info-tut .tut-ex { border-left:2px solid var(--accent); padding:4px 8px; margin:6px 0 2px; background:rgba(0,200,255,0.04); }
   #info-btn { position:absolute; right:0; top:50%; transform:translateY(-50%); background:none; border:none;
     padding:2px; cursor:pointer; color:var(--text-dim); line-height:0; }
   #info-btn:hover, #info-btn.active { color:var(--accent); }
@@ -1318,6 +1326,63 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
     <div class="info-row"><span>Taxi fuel A320</span><span><input type="number" id="def-taxi-a320" min="0" step="10" oninput="setDefaultTaxi('taxiA320', this)"> <span style="text-transform:none;">kg</span></span></div>
     <div class="info-row"><span>Taxi fuel A330</span><span><input type="number" id="def-taxi-a330" min="0" step="10" oninput="setDefaultTaxi('taxiA330', this)"> <span style="text-transform:none;">kg</span></span></div>
     <div class="info-note">Defaults apply when the tool opens and on RESET. KG/LB is remembered automatically.</div>
+    <div class="info-sub">How to use</div>
+    <div class="info-tut">
+      <details>
+        <summary>Quick start &mdash; all types</summary>
+        <ol>
+          <li>Pick the aircraft type at the top of the main screen.</li>
+          <li>Enter <b>DOW</b> and <b>DOW CG (%MAC)</b> from the aircraft's weight report or trim sheet.</li>
+          <li>Add passengers, crew and cargo if carried. Most ferry flights are DOW only.</li>
+          <li>Enter <b>block</b>, <b>trip</b> and <b>taxi</b> fuel. Taxi starts at the default set above.</li>
+          <li>Check the status bar. It checks MZFW / MTOW / MLW, tank capacity, and the <b>takeoff</b> and <b>landing</b> CG against their envelopes. The ZFW CG is drawn on the chart but not checked.</li>
+          <li><b>LOADSHEET</b> builds the two-page sheet, which you can save as a PDF. <b>RESET</b> clears every entry.</li>
+        </ol>
+      </details>
+      <details>
+        <summary>A320 family</summary>
+        <ul>
+          <li>Block fuel is distributed automatically &mdash; just enter block, trip and taxi.</li>
+          <li><b>A321 with ACT:</b> enter the ACT fuel in its own box.</li>
+          <li><b>A321F:</b> fuel in the <b>Ballast Fuel</b> box stays on board through landing. The single occupant box covers the cockpit and supernumeraries.</li>
+        </ul>
+      </details>
+      <details>
+        <summary>A330-300 &mdash; standard fuel</summary>
+        <ul>
+          <li>Use <b>Standard</b> whenever the refuel follows the normal QRH sequence. Enter block fuel only; the tank gauges show where it goes. The tail tank takes about 2.4 t once the block passes roughly 39 t.</li>
+          <li>For trip burn, the tool runs the same sequence in reverse, including the normal transfer of tail fuel forward.</li>
+          <li><b>Fuel SG</b> (beside the tail tank) defaults to 0.785. Enter the actual SG when the fuel is denser &mdash; tank capacities scale with it, so a load such as 78 t at SG 0.800 fits. The SG isn't printed on the loadsheet.</li>
+          <li>Leave <b>Centre Tank Fitted</b> off unless the aircraft actually has one.</li>
+        </ul>
+      </details>
+      <details>
+        <summary>A330-300 &mdash; non-standard fuel &amp; locking the tail</summary>
+        <p>Use <b>Non-Standard</b> when the tanks don't match the QRH &mdash; for example extra fuel put in the tail for CG, or the trim tank locked.</p>
+        <ol>
+          <li>Start in <b>Standard</b>: enter the block fuel (and SG if needed), trip and taxi.</li>
+          <li>Tap <b>&#9888; Non-Standard</b>. The normal QRH split is carried over into each tank box, so nothing has to be guessed.</li>
+          <li>Adjust only the tanks that differ &mdash; for example add fuel to the tail. Block fuel becomes the sum of the tanks.</li>
+          <li><b>Tail Ballast OFF:</b> tail fuel burns along with the other tanks, following the normal sequence from the quantities you entered.</li>
+          <li><b>Tail Ballast ON:</b> the tail quantity stays exactly as entered through takeoff and landing. All taxi and trip fuel comes out of the wing tanks. Use this when tail fuel won't transfer (trim tank locked or inhibited) and you need it there for the landing CG.</li>
+          <li>With Tail Ballast on, make sure the wing tanks alone hold all the taxi and trip fuel plus reserves &mdash; landing fuel can never be less than the tail quantity.</li>
+        </ol>
+        <div class="tut-ex"><p><b>Example:</b> DOW 122,000 kg at 22.0 %MAC; inners 7,000 kg each, tail 4,891 kg; taxi 500 kg, trip 8,000 kg.<br>Landing CG is <b>30.5 %</b> with Tail Ballast off and <b>35.4 %</b> with it on &mdash; the same fuel, about 5 % apart. Set the toggle to match what the aircraft will actually do.</p></div>
+        <ul>
+          <li>Locking the tail moves the landing CG aft &mdash; watch the aft limit at light landing weights.</li>
+          <li>The <b>-300F</b> works the same way; its single box covers the cockpit and supernumerary occupants.</li>
+          <li>On the <b>-200</b>, prefer Standard: its non-standard per-tank arms are approximate.</li>
+        </ul>
+      </details>
+      <details>
+        <summary>Reading the results</summary>
+        <ul>
+          <li>A CG outside its envelope turns red, and the status bar names the first problem it finds.</li>
+          <li>Stab trim on the loadsheet comes from the takeoff CG. Outside the trim scale's range it prints a dash.</li>
+          <li>Always cross-check against the aircraft's own documents &mdash; this tool is validation pending.</li>
+        </ul>
+      </details>
+    </div>
     <div class="info-note">Validation pending &ndash; not for operational use.</div>
   </div>
 </div>
@@ -3085,7 +3150,10 @@ const VARIANTS = {
     // proved unreliable to read automatically. Do not "improve" or re-read from the image —
     // these are exact as given: (15,121000)->(15,210000)->(17,233000)->(39,233000)->
     // (40,190000)->(33,121000)->close.
-    towEnv: [[15,121000],[15,210000],[17,233000],[39,233000],[40,190000],[33,121000],[15,121000]],
+    // Oct 2026 (user-approved): forward corner at 233 t moved 17.0 -> 18.4 %MAC per the Airbus A330
+    // Aircraft Characteristics max-pavement-load table (A330-300 233.9 t ramp: most fwd CG 18.4 %;
+    // 230.9 t: 18 %, which the new edge also matches). Everything else unchanged.
+    towEnv: [[15,121000],[15,210000],[18.4,233000],[39,233000],[40,190000],[33,121000],[15,121000]],
     // ZFW envelope vertices specified directly by the user — exact as given:
     // (15,121000)->(15,175000)->(41,175000)->(41,121000)->close.
     zfwEnv: [[15,121000],[15,175000],[41,175000],[41,121000],[15,121000]],
