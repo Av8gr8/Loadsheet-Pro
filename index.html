@@ -8,7 +8,7 @@
      sequence number for same-day updates) every time a new version is pushed to
      GitHub that the app should pick up. The native shell fetches this file's raw
      text and reads this tag directly — no JS execution needed for the check itself. -->
-<meta name="app-version" content="2026-10-12-4">
+<meta name="app-version" content="2026-10-14-2">
 
 <!-- iOS PWA / Add to Home Screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2866,17 +2866,27 @@ const A330_300_TRIM_ARM_L = [
 // do NOT share interchangeable fuel arm curves, at least not at higher fuel loads.
 // That's why A330-300's arms are used ONLY as a non-standard-mode fallback (tankArms
 // below), not for standard mode, where this dedicated curve is used instead.
+// CORRECTED Oct 2026: the original conversion used 23846 (the A320's index-to-%MAC constant),
+// which shrank every fuel-CG deviation from 25 %MAC by ~30%. The source table (operator A330-202
+// LOAD and TRIM SHEET "FUEL INDEX TABLE", density 0.785 column, integer index values) is unchanged;
+// it is now converted with the A330 index formula I = (H - 33.1555) x W / 2500 + K, i.e.
+// %MAC = 25 + dI x 34388 / W (2500 / MAC 7.270 m x 100; 25 %MAC at H 33.1555 m, LEMAC 31.338 m).
+// The divisor 2500 is CONFIRMED independently: the A330-300's manual fuel CG (same wing, same
+// fill sequence up to 36,500 kg) predicts this table's values with an rms error of 0.27 index
+// units using 2500, versus 4.4 using 5000 (the divisor printed on an A330-243 sheet, which uses
+// a coarser index). Example: 2,000 kg (inner tanks) is now -9.4 %MAC (was +1.2), matching the
+// -300's -10.9 %MAC within the table's integer rounding.
 const A330_200_FUEL_ARM_PCTMAC = [
-  [2000,1.154],[4000,1.154],[6000,1.154],[8000,1.154],[10000,5.923],[12000,17.051],
-  [14000,26.703],[16000,27.981],[18000,25.000],[20000,22.615],[22000,20.664],[24000,19.038],
-  [26000,17.663],[28000,17.335],[30000,16.256],[32000,15.313],[34000,14.480],[36000,14.402],
-  [36500,13.894],[37000,17.266],[37500,21.185],[38000,24.372],[38500,27.478],[39000,29.891],
-  [41500,28.448],[44000,27.168],[46500,26.026],[49000,25.487],[51500,25.000],[54000,24.558],
-  [56500,24.156],[59000,24.192],[61500,24.612],[64000,24.627],[66500,25.359],[69000,25.691],
-  [71000,26.343],[73000,26.960],[75000,27.226],[77000,27.168],[79000,26.811],[81000,26.472],
-  [83000,26.149],[85000,25.842],[87000,25.548],[89000,25.536],[91000,25.262],[93000,25.000],
-  [95000,24.749],[97000,24.508],[99000,24.277],[101000,24.056],[103000,23.842],[105000,23.637],
-  [107000,23.440],[109000,23.031]
+  [2000,-9.388],[4000,-9.388],[6000,-9.388],[8000,-9.388],[10000,-2.51],[12000,13.537],
+  [14000,27.456],[16000,29.298],[18000,25.0],[20000,21.561],[22000,18.748],[24000,16.403],
+  [26000,14.419],[28000,13.947],[30000,12.391],[32000,11.03],[34000,9.829],[36000,9.716],
+  [36500,8.984],[37000,13.847],[37500,19.498],[38000,24.095],[38500,28.573],[39000,32.054],
+  [41500,29.972],[44000,28.126],[46500,26.479],[49000,25.702],[51500,25.0],[54000,24.363],
+  [56500,23.783],[59000,23.834],[61500,24.441],[64000,24.463],[66500,25.517],[69000,25.997],
+  [71000,26.937],[73000,27.826],[75000,28.21],[77000,28.126],[79000,27.612],[81000,27.123],
+  [83000,26.657],[85000,26.214],[87000,25.791],[89000,25.773],[91000,25.378],[93000,25.0],
+  [95000,24.638],[97000,24.291],[99000,23.958],[101000,23.638],[103000,23.331],[105000,23.035],
+  [107000,22.75],[109000,22.161]
 ];
 function interpA330200FuelArm(kg) {
   const t = A330_200_FUEL_ARM_PCTMAC;
@@ -2988,7 +2998,20 @@ const VARIANTS = {
     trimThreshold:  73301,  // trim starts same point as CTR
     ctrFillStart:   73301,
     qrhPostTable:   A200_POST_TABLE,
-    cargo: { fwd:-152.8, aft:318.7, bulk:424.8 },
+    // Cargo arms (Oct 2026) MEASURED from an operator A330-243 Load and Trim Sheet's cargo
+    // index bars (hatch pitch vs the index scale, 16.89 px per index unit; index formula
+    // I = (H - 33.1555) x W / 5000 + 100, i.e. 25 %MAC at H 33.1555 m -> LEMAC 31.338 m,
+    // MAC 7.270 m). Per step: hold 1 -1.517/500 kg (H 17.99 m), hold 2 -0.949/500 kg (23.66 m),
+    // hold 3 +0.607/500 kg (39.22 m), hold 4 +1.106/500 kg (44.21 m), bulk +0.783/250 kg
+    // (48.81 m). Fwd = holds 1+2 and aft = holds 3+4 weighted by compartment length on the
+    // sheet's diagram (1:2 = 132:100, 3:4 = 98:102) -> 20.43 m / 41.77 m. Hold limits on the
+    // sheet: fwd 18,869 kg, aft 15,241 kg, bulk 3,468 kg. Replaces earlier placeholder values
+    // (-152.8 / 318.7 / 424.8) whose aft and bulk arms lay behind the real holds.
+    cargo: { fwd:-150.0, aft:143.5, bulk:240.3 },
+    // Stab trim (Oct 2026) from the same A330-243 sheet's PITCH TRIM scale: 7 (nose up) at
+    // 21 %MAC, linear to 0 at 35 %MAC (1 unit per 2 %MAC), constant 18-21 and 35-40 —
+    // the same scale as the A330-300.
+    stabTrim: { points: [[18,7],[21,7],[35,0],[40,0]] },
     // ZFW envelope vertices specified directly by the user (operator A330-200 chart,
     // not digitized) — exact as given:
     // (23.9,116000)->(23,130000)->(22.5,135000)->(20.8,144000)->(20.2,170000)->(39,170000)->
@@ -4302,8 +4325,8 @@ const PAX_LOC_ARMS = {
   'A319':    { cockpit:-288.1, fwd:-158.0, mid: 51.3, aft:245.7 },   // estimate: A320 ceo values
   'A321':    { cockpit:-389.8, fwd:-209.0, mid: 45.0, aft:278.0 },   // estimate
   'A321NEO': { cockpit:-389.8, fwd:-209.0, mid: 45.0, aft:278.0 },   // estimate
-  'A330-200':{ cockpit:-392.0, fwd:-227.0, mid: 40.0, aft:235.0 },   // estimate
-  'A330-300':{ cockpit:-392.0, fwd:-227.0, mid: 48.0, aft:282.0 },   // estimate
+  'A330-200':{ cockpit:-295.9, fwd:-183.3, mid:-19.9, aft:170.3 },   // Oct 2026: fwd/mid/aft = cabin zones OA/OB/OC MEASURED from an A330-243 load & trim sheet (84 kg pax); cockpit = A330 jumpseat station ~9.83 m (same nose geometry as the -300) on the -200's LEMAC 31.338 m
+  'A330-300':{ cockpit:-339.8, fwd:-227.0, mid: 48.0, aft:282.0 },   // cockpit (Oct 2026) = jumpseats from the A330-300 W&B manual (H 9.800 / 9.850 m); fwd/mid/aft still estimates
   'A330-900':{ cockpit:-392.0, fwd:-227.0, mid: 48.0, aft:282.0 }    // estimate
 };
 function syncPaxFromLocations(recalc) {
