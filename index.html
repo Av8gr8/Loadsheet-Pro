@@ -8,7 +8,7 @@
      sequence number for same-day updates) every time a new version is pushed to
      GitHub that the app should pick up. The native shell fetches this file's raw
      text and reads this tag directly — no JS execution needed for the check itself. -->
-<meta name="app-version" content="2026-10-15-14">
+<meta name="app-version" content="2026-10-15-15">
 
 <!-- iOS PWA / Add to Home Screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2695,6 +2695,10 @@ const A320_VARIANTS = {
     // Real WBM-derived arm-vs-quantity tables (see A321_WING_TANK_PCTMAC above) — used in
     // place of the constant tankArms.l_outer/l_inner/ctr for the fuel moment calc.
     wingTankArmTable: A321_WING_TANK_PCTMAC, centerTankArmTable: A321_CTR_TANK_PCTMAC,
+    // Oct 2026: same fill/burn order as the A321neo (wings fill first, centre burns first). Checked
+    // against the Airbus loadsheet app for an A321-231: with this, TOW/LW CG and trim match it exactly
+    // (49.0 t @ 14.1 % + 17.8 t fuel, 15 t trip -> TOW 13.1 %, LW 13.3 %); without it LW read 0.6 % aft.
+    refuelSequence: A321NEO_REFUEL_SEQUENCE,
     qrhTable:'A321', actCapacity:3000,
     cargo:{ fwd:-191.3, aft:204.0, bulk:338.6 },   // Oct 2026, no-ACT basis (user: ACTs rarely flown). Holds 1/2/4/5 = -248.4/-155.0/+265.3/+338.6 from an A321-271N sheet's printed index tables (fits within 1 kg); hold 3 = +165.2 measured on an A321 (Y238) training sheet (full-size hold; on the ACT-equipped neo sheet it is a small 1,121 kg section at +204.9). fwd = 1+2 by max load; aft = 3+4 weighted by hold length (125:80) -> +204.0. Training sheet independently confirms holds 1/2/4/5 within 0.3 m.
     // Digitized from the user's second A321 loadsheet screenshot (A321-231; MTOW 93,500 /
@@ -2784,6 +2788,7 @@ const A320_VARIANTS = {
     // Same physical fuel tanks as the passenger A321 (freighter conversion doesn't touch
     // the wing/center tanks), so the real-WBM arm tables apply here too.
     wingTankArmTable: A321_WING_TANK_PCTMAC, centerTankArmTable: A321_CTR_TANK_PCTMAC,
+    refuelSequence: A321NEO_REFUEL_SEQUENCE,   // Oct 2026: same wing/centre fill and burn order as the A321 / A321neo
     qrhTable:'A321', actCapacity:0,
     cargo:{ fwd:-191.3, aft:204.0, bulk:338.6, k1:383.5, k2:420.8 },   // lower deck from the A321-271N sheet (as A321); k1/k2 from the WBM
     isFreighter: true,
