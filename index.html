@@ -8,7 +8,7 @@
      sequence number for same-day updates) every time a new version is pushed to
      GitHub that the app should pick up. The native shell fetches this file's raw
      text and reads this tag directly — no JS execution needed for the check itself. -->
-<meta name="app-version" content="2026-10-15-6">
+<meta name="app-version" content="2026-10-15-14">
 
 <!-- iOS PWA / Add to Home Screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -298,16 +298,30 @@
   #numpad .np-head { display:flex; justify-content:space-between; align-items:baseline; gap:8px; padding:2px 4px 8px; }
   #numpad .np-label { font-family:var(--cond); font-size:13px; letter-spacing:1px; text-transform:uppercase; color:var(--text-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   #numpad .np-unit { font-family:var(--cond); font-size:12px; color:var(--text-dim); }
-  #numpad .np-disp { font-family:'Share Tech Mono',monospace; font-size:30px; color:var(--accent); text-align:right; background:#0a0a0a; border:1px solid #2c2c2c; border-radius:8px; padding:6px 12px; min-height:44px; margin-bottom:10px; overflow:hidden; white-space:nowrap; }
+  #numpad .np-disp { font-family:var(--sans); font-weight:600; letter-spacing:0.5px; font-size:30px; color:var(--accent); text-align:right; background:#0a0a0a; border:1px solid #2c2c2c; border-radius:8px; padding:6px 12px; min-height:44px; margin-bottom:10px; overflow:hidden; white-space:nowrap; }
   #numpad .np-disp.fresh { color:var(--text-dim); }
   #numpad .np-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; }
-  #numpad button { height:52px; border-radius:9px; border:1px solid #333; background:#262626; color:#f0f0f0; font-family:'Share Tech Mono',monospace; font-size:24px; padding:0; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+  #numpad button { height:52px; border-radius:9px; border:1px solid #333; background:#262626; color:#f0f0f0; font-family:var(--sans) !important; font-weight:600; font-size:24px; padding:0; cursor:pointer; -webkit-tap-highlight-color:transparent; }
   #numpad button:active { background:#3a3a3a; transform:scale(0.97); }
   #numpad button.np-fn { background:#1d1d1d; color:var(--text-dim); font-family:var(--cond); font-size:16px; letter-spacing:1px; }
   #numpad button.np-next { background:rgba(0,200,255,0.10); color:var(--accent); border-color:rgba(0,200,255,0.35); font-family:var(--cond); font-size:16px; letter-spacing:1px; }
   #numpad button.np-done { background:var(--accent); color:#06121a; border-color:var(--accent); font-family:var(--cond); font-size:17px; font-weight:700; letter-spacing:1px; }
   #numpad button.np-zero { grid-column:span 2; }
   #numpad button:disabled { opacity:0.25; }
+  #numpad .np-screw { position:absolute; width:8px; height:8px; border-radius:50%; background:radial-gradient(circle at 35% 35%,#c9ccd0,#6c7074 60%,#2f3235);
+    box-shadow:0 1px 1px rgba(0,0,0,0.6); }
+  #numpad .np-screw::after { content:''; position:absolute; left:1px; right:1px; top:3.5px; height:1px; background:#2a2c2e; transform:rotate(35deg); }
+  #numpad .np-head { padding-left:10px; padding-right:10px; }
+  /* Oct 2026: keypad ~0.6 cm larger on iPad (about 12%): 272→304 px wide, keys 52→58 px tall */
+  #numpad { width:304px; padding:11px; }
+  #numpad .np-disp { font-size:34px; min-height:50px; }
+  #numpad .np-grid { gap:8px; }
+  #numpad button { height:58px; font-size:27px; }
+  #numpad button.np-fn, #numpad button.np-next { font-size:17px; }
+  #numpad button.np-done { font-size:16px; letter-spacing:0.5px; }
+  #numpad .np-label { font-size:14px; }
+  /* Oct 2026: panel in the tool's grey; keys stay dark */
+  #numpad { background:#3d3d3d; border-color:var(--border); box-shadow:0 14px 40px rgba(0,0,0,0.6); } /* a shade darker than the panels (#4a4a4a) so the pad stands out */
   input.np-active { border-color:var(--accent) !important; box-shadow:0 0 0 2px rgba(0,200,255,0.35); }
   .info-tut { display:flex; flex-direction:column; gap:6px; }
   .info-tut details { border:1px solid var(--border); border-radius:3px; background:#0a0a0a; padding:7px 9px; }
@@ -5737,7 +5751,7 @@ function npShowDisp() {
 function npPlace() {
   const pad = document.getElementById('numpad'); if (!NP.el) return;
   const r = NP.el.getBoundingClientRect(), vw = window.innerWidth, vh = window.innerHeight;
-  const pw = pad.offsetWidth || 272, ph = pad.offsetHeight || 340, gap = 12;
+  const pw = pad.offsetWidth || 304, ph = pad.offsetHeight || 380, gap = 12;
   // To the RIGHT of the entry box (user, Oct 2026: fine to cover the results), vertically centred
   // on the field and kept on screen. Falls back to the left side only if there is no room on the right.
   // Anchor just past the right edge of the whole data column (sidebar), so the pad never covers
@@ -5886,6 +5900,7 @@ window.addEventListener('error', (e) => {
 // (works automatically when hosted on Netlify)
 </script>
 <div id="numpad" role="dialog" aria-label="Number pad">
+  <span class="np-screw" style="left:5px;top:5px"></span><span class="np-screw" style="right:5px;top:5px"></span><span class="np-screw" style="left:5px;bottom:5px"></span><span class="np-screw" style="right:5px;bottom:5px"></span>
   <div class="np-head"><span class="np-label" id="np-label"></span><span class="np-unit" id="np-unit"></span></div>
   <div class="np-disp" id="np-disp"></div>
   <div class="np-grid">
