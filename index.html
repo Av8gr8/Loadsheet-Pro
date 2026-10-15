@@ -8,7 +8,7 @@
      sequence number for same-day updates) every time a new version is pushed to
      GitHub that the app should pick up. The native shell fetches this file's raw
      text and reads this tag directly — no JS execution needed for the check itself. -->
-<meta name="app-version" content="2026-10-15-15">
+<meta name="app-version" content="2026-10-15-16">
 
 <!-- iOS PWA / Add to Home Screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -4695,7 +4695,13 @@ function updateA320StandardDiagram(variant, blockKg) {
     if (actInput) actInput.value = '';
   }
 
-  if (blockKg <= 0) return;
+  if (blockKg <= 0) {
+    // Oct 2026 fix: with no block fuel, empty every tank bar and label. Before, this returned early
+    // and left the previous entry (or the previous variant's values, e.g. 321neo wing totals) on screen.
+    ['lo','li','ctr','ri','ro'].forEach(k => { setBar('a320-tf-'+k, 0, 1); setKgLabel('a320-tq-'+k, 0); });
+    setBar('a320-tf-act', actKg, d.actCapacity||3000); setKgLabel('a320-tq-act', actKg);
+    return;
+  }
 
   const r = interpA320Table(blockKg, isA321 ? actKg : 0);
   const outerCap = d.tanks.l_outer || 691;
