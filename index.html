@@ -8,7 +8,7 @@
      sequence number for same-day updates) every time a new version is pushed to
      GitHub that the app should pick up. The native shell fetches this file's raw
      text and reads this tag directly — no JS execution needed for the check itself. -->
-<meta name="app-version" content="2026-10-17-1">
+<meta name="app-version" content="2026-10-23-1">
 
 <!-- iOS PWA / Add to Home Screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2703,7 +2703,7 @@ const A320_VARIANTS = {
     // further nose-up change is made), so the table's first point is duplicated far
     // out to the left rather than a real second measurement. Nothing past CG 39 — the
     // scan simply ends there — so stabTrimForCG() correctly prints a dash beyond it.
-    stabTrim: { points: [[0,3],[19,3],[23,2],[27,1],[31,0],[35,-1],[39,-2]] },
+    stabTrim: { points: [[0,3],[19,3],[23,2],[27,1],[31,0],[35,-1],[39,-2]], format: 'updn' },
     cgLimits:{ lo:13, hi:38 }
   },
   // ═══════════════════════════════════════════════════════
@@ -3169,7 +3169,7 @@ const VARIANTS = {
     // Stab trim (Oct 2026) from the same A330-243 sheet's PITCH TRIM scale: 7 (nose up) at
     // 21 %MAC, linear to 0 at 35 %MAC (1 unit per 2 %MAC), constant 18-21 and 35-40 —
     // the same scale as the A330-300.
-    stabTrim: { points: [[18,7],[21,7],[35,0],[40,0]] },
+    stabTrim: { points: [[18,7],[21,7],[35,0],[40,0]], format: 'updn' },
     // ZFW envelope vertices specified directly by the user (operator A330-200 chart,
     // not digitized) — exact as given:
     // (23.9,116000)->(23,130000)->(22.5,135000)->(20.8,144000)->(20.2,170000)->(39,170000)->
@@ -3250,7 +3250,7 @@ const VARIANTS = {
     // the scale are read as constant: trim 7 for CG 15-21, trim 0 for CG 35-41. Linear
     // (0.5 trim per 1% MAC) between the printed CG ticks. This is one operator's chart for
     // one airframe. Outside CG 15-41 the loadsheet prints a dash — never extrapolate.
-    stabTrim: { points: [[15,7],[21,7],[24,5.5],[28,3.5],[32,1.5],[35,0],[41,0]] },
+    stabTrim: { points: [[15,7],[21,7],[24,5.5],[28,3.5],[32,1.5],[35,0],[41,0]], format: 'updn' },
     cgLimits: { lo:15, hi:39 }
   },
   // ═══════════════════════════════════════════════════════
@@ -5179,7 +5179,9 @@ function renderLoadsheet() {
 function stabTrimForCG(v, cg) {
   const pts = v && v.stabTrim && v.stabTrim.points;
   if (!pts || !(cg > 0)) return null;
-  if (cg < pts[0][0] || cg > pts[pts.length - 1][0]) return null;
+  // Oct 2026: outside the table, hold the end value (the THS is at its stop) instead of showing a blank.
+  if (cg <= pts[0][0]) return pts[0][1];
+  if (cg >= pts[pts.length - 1][0]) return pts[pts.length - 1][1];
   for (let i = 0; i < pts.length - 1; i++) {
     const [c0, t0] = pts[i], [c1, t1] = pts[i + 1];
     if (cg >= c0 && cg <= c1) return c1 === c0 ? t0 : t0 + (cg - c0) / (c1 - c0) * (t1 - t0);
