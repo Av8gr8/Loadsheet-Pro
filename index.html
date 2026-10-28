@@ -8,7 +8,7 @@
      sequence number for same-day updates) every time a new version is pushed to
      GitHub that the app should pick up. The native shell fetches this file's raw
      text and reads this tag directly — no JS execution needed for the check itself. -->
-<meta name="app-version" content="2026-10-28-2">
+<meta name="app-version" content="2026-10-28-3">
 
 <!-- iOS PWA / Add to Home Screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -4166,10 +4166,15 @@ function updateManifest(moments, zfw, zfwCG, fuelTOW, fuelArmTOW, tow, towCG, fu
 function drawChart(zfwCG, zfw, towCG, tow, lwCG, lw) {
   const canvas = document.getElementById('envelope');
   const wrap = canvas.parentElement;
-  canvas.width  = wrap.clientWidth  || 600;
-  canvas.height = wrap.clientHeight || 380;
-  const W = canvas.width, H = canvas.height;
+  // Draw at the screen's real pixel density (Retina) so lines and text stay
+  // crisp; CSS still sets the on-screen size, and all drawing below stays in
+  // the same CSS-pixel coordinates as before.
+  const W = wrap.clientWidth  || 600, H = wrap.clientHeight || 380;
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  canvas.width  = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
   const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   const v = currentFamily === 'A320' ? A320_VARIANTS[currentVariant] : VARIANTS[currentVariant];
   if (!v) return;
   const lim = getEffectiveLimits(v);
