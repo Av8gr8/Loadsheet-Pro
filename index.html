@@ -8,7 +8,7 @@
      sequence number for same-day updates) every time a new version is pushed to
      GitHub that the app should pick up. The native shell fetches this file's raw
      text and reads this tag directly — no JS execution needed for the check itself. -->
-<meta name="app-version" content="2026-10-28-1">
+<meta name="app-version" content="2026-10-28-2">
 
 <!-- iOS PWA / Add to Home Screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1771,7 +1771,12 @@ function(t){t.__bidiEngine__=t.prototype.__bidiEngine__=function(t){var r,n,i,a,
 
         <!-- ── NON-STANDARD MODE ── -->
         <div id="fuel-nonstd-section" style="display:none">
-          <p style="font-size:13px;font-family: var(--mono); letter-spacing: 1px;color:rgba(255,107,53,0.8);margin-bottom:10px;padding:5px 8px;border:1px solid rgba(255,107,53,0.2);border-radius:3px;background:rgba(255,107,53,0.05);line-height:1.5;">⚠ Enter each tank quantity individually</p>
+          <p style="font-size:13px;font-family: var(--mono); letter-spacing: 1px;color:rgba(255,107,53,0.8);margin-bottom:10px;padding:5px 8px;border:1px solid rgba(255,107,53,0.2);border-radius:3px;background:rgba(255,107,53,0.05);line-height:1.5;">⚠ Enter block fuel for a standard load, then adjust each tank as needed</p>
+          <div class="field">
+            <label>Block Fuel <span>Fills tanks to standard</span></label>
+            <input type="number" id="fuel-block-ns" placeholder="0" oninput="nsBlockEntered()">
+            <span class="unit unit-mass">kg</span>
+          </div>
 
           <!-- Wing tanks: bar + input under each -->
           <div style="display:flex;gap:6px;margin-bottom:8px;">
@@ -2177,7 +2182,7 @@ const MASS_INPUT_IDS = [
   'man-mzfw','man-mlw','man-mtow','man-mow',
   'dow','pax-mass',
   'cargo-fwd','cargo-k1','cargo-k2','cargo-aft','cargo-h4','cargo-bulk',
-  'fuel-block','fuel-trip','fuel-taxi',
+  'fuel-block','fuel-block-ns','fuel-trip','fuel-taxi',
   'tk-l2','tk-l1','tk-ctr','tk-r1','tk-r2','tk-tail',
   'a320-fuel-act','a320-fuel-block','a320-fuel-trip','a320-fuel-ballast','a320-fuel-taxi',
 ];
@@ -3471,6 +3476,34 @@ function setA321FCargoMode(mode) {
   calculate();
 }
 
+// Non-standard Block Fuel box (Oct 2026). Typing a block here fills the
+// tanks with the standard load for that block — exactly what entering it in
+// Standard and switching to Non-Standard does — and the pilot then adjusts any
+// tank. Editing a tank updates this box to the new tank total. The standard
+// Block Fuel field mirrors it, so switching back to Standard keeps the total.
+function nsBlockEntered() {
+  const v = VARIANTS[currentVariant];
+  if (!v || currentFamily === 'A320') return;
+  const el = document.getElementById('fuel-block-ns');
+  const blockKg = readMassInput('fuel-block-ns', 0);
+  const { ids, fills } = standardTankFills(blockKg, v);
+  ids.forEach((id, i) => writeMassInput('tk-' + id, fills[i] > 0 ? fills[i] : ''));
+  writeMassInput('fuel-block', blockKg > 0 ? blockKg : '');
+  if (el && el.value === '') writeMassInput('fuel-block', '');
+  calculate();
+}
+document.addEventListener('input', (e) => {
+  const el = e.target;
+  if (!el || !el.id || el.id.indexOf('tk-') !== 0) return;
+  let sum = 0, any = false;
+  ['l2','l1','ctr','r1','r2','tail'].forEach(id => {
+    const t = document.getElementById('tk-' + id);
+    if (t && t.value !== '') { any = true; sum += readMassInput('tk-' + id, 0); }
+  });
+  writeMassInput('fuel-block-ns', any ? sum : '');
+  writeMassInput('fuel-block', any ? sum : '');
+});
+
 function setFuelMode(mode) {
   // Carry the standard-mode fill over into the non-standard tank fields when switching
   // standard -> non-standard (Oct 2026): saves re-deriving and re-typing per-tank
@@ -3485,6 +3518,7 @@ function setFuelMode(mode) {
       const blockKg = readMassInput('fuel-block', 0);
       const { ids, fills } = standardTankFills(blockKg, v);
       ids.forEach((id, i) => writeMassInput('tk-' + id, fills[i] > 0 ? fills[i] : ''));
+      writeMassInput('fuel-block-ns', blockKg > 0 ? blockKg : '');
     }
   }
   fuelMode = mode;
@@ -4577,7 +4611,7 @@ function syncPaxFromLocations(recalc) {
 function resetAll() {
   ['acft-reg','flt-date','flt-num',
    'dow','dow-cg','pax','pax-cg','cargo-fwd','cargo-k1','cargo-k2','cargo-aft','cargo-h4','cargo-bulk',
-   'fuel-block','fuel-trip','tk-l2','tk-l1','tk-ctr','tk-r1','tk-r2','tk-tail',
+   'fuel-block','fuel-block-ns','fuel-trip','tk-l2','tk-l1','tk-ctr','tk-r1','tk-r2','tk-tail',
    // A320 family fuel (Oct 2026 fix: these were never cleared, so RESET left the fuel in
    // on every A320-family aircraft, A321F included)
    'a320-fuel-block','a320-fuel-trip','a320-fuel-act','a320-fuel-ballast'].forEach(id => {
