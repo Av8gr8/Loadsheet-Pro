@@ -8,7 +8,7 @@
      sequence number for same-day updates) every time a new version is pushed to
      GitHub that the app should pick up. The native shell fetches this file's raw
      text and reads this tag directly — no JS execution needed for the check itself. -->
-<meta name="app-version" content="2026-10-23-1">
+<meta name="app-version" content="2026-10-28-1">
 
 <!-- iOS PWA / Add to Home Screen -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -2185,6 +2185,18 @@ const MASS_INPUT_IDS = [
 function kgToDisplay(kg) { return unitMode === 'kg' ? kg : kg * LB_PER_KG; }
 function displayToKg(val) { return unitMode === 'kg' ? val : val * KG_PER_LB; }
 function massUnitLabel() { return unitMode === 'kg' ? 'kg' : 'lb'; }
+// CG chart weight axis, in the selected unit. Gridlines every 20 t in kg
+// mode, every 40,000 lb in lb mode. Labels "80t" / "160k" (thousand lb).
+function chartWeightTicksKg(wMin, wMax) {
+  const step = unitMode === 'kg' ? 20000 : 40000;
+  const lo = kgToDisplay(wMin), hi = kgToDisplay(wMax), out = [];
+  for (let v = Math.ceil(lo/step)*step; v <= hi; v += step) out.push(displayToKg(v));
+  return out;
+}
+function chartWeightLabel(kg) {
+  return unitMode === 'kg' ? (kg/1000).toFixed(0)+'t' : Math.round(kgToDisplay(kg)/1000)+'k';
+}
+function chartWeightAxisTitle() { return unitMode === 'kg' ? 'WEIGHT (tonnes)' : 'WEIGHT (1000 lb)'; }
 
 // Read a mass input field, always returning kilograms regardless of the
 // unit currently displayed. Mirrors the previous `+el.value || fallback`
@@ -4174,18 +4186,18 @@ function drawChart(zfwCG, zfw, towCG, tow, lwCG, lw) {
     ctx.fillStyle='rgba(150,150,150,0.7)'; ctx.font='10px Share Tech Mono,monospace'; ctx.textAlign='center';
     ctx.fillText(cg+'%', toX(cg,wMin), mt+ph+16);
   }
-  for (let w=Math.ceil(wMin/20000)*20000; w<=wMax; w+=20000) {
+  for (const w of chartWeightTicksKg(wMin, wMax)) {
     ctx.strokeStyle='rgba(68,68,68,0.8)';
     ctx.beginPath(); ctx.moveTo(ml,toY(w)); ctx.lineTo(ml+pw,toY(w)); ctx.stroke();
     ctx.fillStyle='rgba(150,150,150,0.7)'; ctx.font='10px Share Tech Mono,monospace'; ctx.textAlign='right';
-    ctx.fillText((w/1000).toFixed(0)+'t', ml-4, toY(w)+4);
+    ctx.fillText(chartWeightLabel(w), ml-4, toY(w)+4);
   }
 
   // Axis labels
   ctx.fillStyle='#8c8c8c'; ctx.font="11px 'Futura Condensed',sans-serif"; ctx.textAlign='center';
   ctx.fillText('CG POSITION (% MAC)', ml+pw/2, H-4);
   ctx.save(); ctx.translate(10,mt+ph/2); ctx.rotate(-Math.PI/2);
-  ctx.fillText('WEIGHT (tonnes)',0,0); ctx.restore();
+  ctx.fillText(chartWeightAxisTitle(),0,0); ctx.restore();
 
   // Limit lines
   const drawLimit = (kg, color, label) => {
@@ -4194,9 +4206,9 @@ function drawChart(zfwCG, zfw, towCG, tow, lwCG, lw) {
     ctx.setLineDash([]); ctx.fillStyle=color; ctx.font='9px Share Tech Mono,monospace'; ctx.textAlign='left';
     ctx.fillText(label, ml+4, toY(kg)-4);
   };
-  drawLimit(lim.mtow,'rgba(57,255,133,0.5)','MTOW '+(lim.mtow/1000).toFixed(0)+'t');
-  drawLimit(lim.mlw, 'rgba(0,200,255,0.5)','MLW '+(lim.mlw/1000).toFixed(0)+'t');
-  drawLimit(lim.mzfw,'rgba(255,209,102,0.5)','MZFW '+(lim.mzfw/1000).toFixed(0)+'t');
+  drawLimit(lim.mtow,'rgba(57,255,133,0.5)','MTOW '+chartWeightLabel(lim.mtow));
+  drawLimit(lim.mlw, 'rgba(0,200,255,0.5)','MLW '+chartWeightLabel(lim.mlw));
+  drawLimit(lim.mzfw,'rgba(255,209,102,0.5)','MZFW '+chartWeightLabel(lim.mzfw));
 
   // Envelopes
   const drawEnv = (pts, stroke, fill, dash) => {
@@ -5583,15 +5595,15 @@ function buildLoadsheetSVG() {
     g+=`<line x1="${tx(cg,wMax)}" y1="${mt}" x2="${tx(cg,wMin)}" y2="${mt+ph}" stroke="#e0e6ee" stroke-width="1"/>`;
     g+=`<text x="${tx(cg,wMin)}" y="${mt+ph+13}" text-anchor="middle" font-size="9" fill="#999" font-family="Arial">${cg}%</text>`;
   }
-  for(let w=Math.ceil(wMin/20000)*20000; w<=wMax; w+=20000){
+  for(const w of chartWeightTicksKg(wMin, wMax)){
     g+=`<line x1="${ml}" y1="${ty(w)}" x2="${ml+pw}" y2="${ty(w)}" stroke="#e0e6ee" stroke-width="1"/>`;
-    g+=`<text x="${ml-4}" y="${(parseFloat(ty(w))+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#999" font-family="Arial">${(w/1000).toFixed(0)}t</text>`;
+    g+=`<text x="${ml-4}" y="${(parseFloat(ty(w))+3).toFixed(1)}" text-anchor="end" font-size="9" fill="#999" font-family="Arial">${chartWeightLabel(w)}</text>`;
   }
 
   // Limit lines
-  [[lim.mtow,'#1a7a3c',`MTOW ${(lim.mtow/1000).toFixed(0)}t`],
-   [lim.mlw, '#0066aa',`MLW ${(lim.mlw/1000).toFixed(0)}t`],
-   [lim.mzfw,'#b08000',`MZFW ${(lim.mzfw/1000).toFixed(0)}t`]].forEach(([kg,col,lbl])=>{
+  [[lim.mtow,'#1a7a3c',`MTOW ${chartWeightLabel(lim.mtow)}`],
+   [lim.mlw, '#0066aa',`MLW ${chartWeightLabel(lim.mlw)}`],
+   [lim.mzfw,'#b08000',`MZFW ${chartWeightLabel(lim.mzfw)}`]].forEach(([kg,col,lbl])=>{
     g+=`<line x1="${ml}" y1="${ty(kg)}" x2="${ml+pw}" y2="${ty(kg)}" stroke="${col}" stroke-width="1" stroke-dasharray="5,3"/>`;
     g+=`<text x="${ml+3}" y="${(parseFloat(ty(kg))-3).toFixed(1)}" font-size="8" fill="${col}" font-family="Arial">${lbl}</text>`;
   });
@@ -5652,7 +5664,7 @@ function buildLoadsheetSVG() {
 
   // Axis labels
   g+=`<text x="${(ml+pw/2).toFixed(1)}" y="${SH-1}" text-anchor="middle" font-size="9" fill="#777" font-family="Arial">CG POSITION (% MAC)</text>`;
-  g+=`<text x="9" y="${(mt+ph/2).toFixed(1)}" text-anchor="middle" font-size="9" fill="#777" font-family="Arial" transform="rotate(-90,9,${(mt+ph/2).toFixed(1)})">WEIGHT (tonnes)</text>`;
+  g+=`<text x="9" y="${(mt+ph/2).toFixed(1)}" text-anchor="middle" font-size="9" fill="#777" font-family="Arial" transform="rotate(-90,9,${(mt+ph/2).toFixed(1)})">${chartWeightAxisTitle()}</text>`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SW} ${SH}" style="width:100%;max-width:${SW}px;border:1px solid #dde3ea;border-radius:4px;background:#fafcff;">${g}</svg>`;
 }
